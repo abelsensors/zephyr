@@ -1,0 +1,17 @@
+sample:
+  name: Power Management 
+tests:
+  sample.boards.stm32.pm.lsi:
+    build_only: true
+    depends_on: rtc_timer
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled("st,stm32-rtc")
+    extra_configs:
+      - CONFIG_STM32_RTC_TIMER_LSI=y
+  sample.boards.stm32.pm.lse:
+    build_only: true
+    depends_on: rtc_timer
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled("st,stm32-rtc")
+    extra_configs:
+      - CONFIG_STM32_RTC_TIMER_LSE=y
