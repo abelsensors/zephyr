@@ -5,7 +5,8 @@
  */
 
 /dts-v1/;
-#include <st/l1/stm32l151Xb.dtsi>
+/*#include <st/l1/stm32l151Xb.dtsi>*/
+#include <st/l1/stm32l152Xc.dtsi>
 #include <st/l1/stm32l152r(6-8-b)tx-pinctrl.dtsi>
 
 / {
@@ -17,6 +18,15 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+	};
+	
+	power-states {
+		stop: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <0>;
+			min-residency-us = <1000>;
+		};
 	};
 
 	leds {
@@ -35,7 +45,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 
@@ -86,4 +96,12 @@
 	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&cpu0 {
+	cpu-power-states = <&stop>;
 };
