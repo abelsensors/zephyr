@@ -23,6 +23,7 @@
 #define MDM_UART_DEV_NAME DT_INST_BUS_LABEL(0)
 #define MDM_MAX_DATA_LENGTH 512
 #define MDM_MAX_SOCKETS 2
+
 #define MDM_RECV_MAX_BUF 10
 #define MDM_RECV_BUF_SIZE 64
 #define MDM_CMD_TIMEOUT K_SECONDS(6)
@@ -36,10 +37,34 @@
 #define MDM_IMEI_LENGTH 24
 #define MDM_ICCID_LENGTH 24
 #define MDM_IP_LENGTH 16
+#define MDM_POWER_ENABLE 0
+#define MDM_POWER_DISABLE 1
 
 #define DT_DRV_COMPAT ublox_sara_n310
 LOG_MODULE_REGISTER(modem_ublox_sara_n310, CONFIG_MODEM_LOG_LEVEL);
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+
+/* forward declaration */
+static int is_awake(void);
+static int turn_on_module(void);
+
+/* pin settings */
+enum mdm_control_pins {
+	MDM_POWER = 0,
+	MDM_VINT,
+};
+
+static struct modem_pin modem_pins[] = {
+	/* MDM_POWER */
+	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_power_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_power_gpios),
+		  (GPIO_OPEN_DRAIN | GPIO_OUTPUT)),
+
+	/* MDM_VINT */
+	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_vint_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_vint_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_vint_gpios) | GPIO_INPUT),
+};
 
 /* modem info */
 struct modem_info {
@@ -121,22 +146,6 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0,
 K_THREAD_STACK_DEFINE(modem_rx_stack, MDM_MAX_DATA_LENGTH);
 static struct k_thread rx_data;
 
-/* network state getter */
-int n310_get_state(void)
-{
-	int ret;
-
-	ret = modem_cmd_send(&mdata.context.iface, &mdata.context.cmd_handler,
-			     NULL, 0U, "AT+CEREG?", &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
-
-	if (ret < 0) {
-		return ret;
-	}
-
-	return mdata.network_state;
-}
-
 /* helper macro to keep readability */
 #define ATOI(s_, value_, desc_) modem_atoi((s_), (value_), (desc_), (__func__))
 static int modem_atoi(const char *s, const int err_value, const char *desc,
@@ -153,6 +162,52 @@ static int modem_atoi(const char *s, const int err_value, const char *desc,
 	}
 
 	return ret;
+}
+
+/* send AT command */
+static int send_at_command(struct modem_iface *iface,
+			   struct modem_cmd_handler *handler,
+			   const struct modem_cmd *handler_cmds,
+			   size_t handler_cmds_len, const uint8_t *buf,
+			   struct k_sem *sem, k_timeout_t timeout, bool tx_lock)
+{
+	int ret;
+
+	/* wake module if asleep */
+	if (is_awake() == 0) {
+		ret = turn_on_module();
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (tx_lock) {
+		ret = modem_cmd_send(iface, handler, handler_cmds,
+				     handler_cmds_len, buf, sem, timeout);
+	} else {
+		ret = modem_cmd_send_nolock(iface, handler, handler_cmds,
+					    handler_cmds_len, buf, sem,
+					    timeout);
+	}
+
+	return ret;
+}
+
+/* network state getter */
+int n310_get_network_state(void)
+{
+	int ret;
+
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, "AT+CEREG?", &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return mdata.network_state;
 }
 
 /*
@@ -252,6 +307,19 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 		net_buf_linearize(minfo.mdm_model, sizeof(minfo.mdm_model) - 1,
 				  data->rx_buf, 0, len);
 	minfo.mdm_model[out_len] = '\0';
+
+	return 0;
+}
+
+/* CMD: +NPSMR */
+MODEM_CMD_DEFINE(on_cmd_npsmr)
+{
+	size_t out_len;
+	char buf[2];
+
+	out_len = net_buf_linearize(buf, sizeof(buf) - 1, data->rx_buf, 0, len);
+
+	LOG_INF("Sleep mode URC: %s", log_strdup(buf));
 
 	return 0;
 }
@@ -440,6 +508,7 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+UUSORD: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+UUSORF: ", on_cmd_socknotifydata, 2U, ","),
 	MODEM_CMD("+CEREG: ", on_cmd_socknotifycereg, 1U, ""),
+	MODEM_CMD("+NPSMR: ", on_cmd_npsmr, 1U, ""),
 };
 
 /* RX thread */
@@ -455,13 +524,6 @@ static void n310_recv(void)
 
 		k_yield();
 	}
-}
-
-/* pin init */
-static int pin_init(void)
-{
-	/* set and enable pins/pwr, blank for now */
-	return 1;
 }
 
 /* create socket */
@@ -491,9 +553,9 @@ static int create_socket(struct modem_socket *sock, const struct sockaddr *addr)
 		snprintk(buf, sizeof(buf), "AT+USOCR=%d", proto);
 	}
 
-	ret = modem_cmd_send(&mdata.context.iface, &mdata.context.cmd_handler,
-			     &cmd, 1U, buf, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      &cmd, 1U, buf, &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
 	if (ret < 0) {
 		LOG_ERR("%s ret:%d", log_strdup(buf), ret);
 		modem_socket_put(&mdata.socket_config, sock->sock_fd);
@@ -560,9 +622,8 @@ static ssize_t send_socket_data(void *obj, const struct msghdr *msg, int flags,
 
 	k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
 
-	ret = modem_cmd_send_nolock(&mdata.context.iface,
-				    &mdata.context.cmd_handler, NULL, 0U,
-				    send_buf, NULL, K_NO_WAIT);
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, send_buf, NULL, K_NO_WAIT, false);
 	if (ret < 0) {
 		LOG_ERR("send_nolock err");
 	}
@@ -671,9 +732,10 @@ static int offload_close(void *obj)
 	if (sock->ip_proto == IPPROTO_UDP) {
 		snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
 
-		ret = modem_cmd_send(&mdata.context.iface,
-				     &mdata.context.cmd_handler, NULL, 0U, buf,
-				     &mdata.sem_response, MDM_CMD_TIMEOUT);
+		ret = send_at_command(&mdata.context.iface,
+				      &mdata.context.cmd_handler, NULL, 0U, buf,
+				      &mdata.sem_response, MDM_CMD_TIMEOUT,
+				      true);
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", log_strdup(buf), ret);
 		}
@@ -781,9 +843,9 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags,
 	sock_data.recv_addr = from;
 	sock->data = &sock_data;
 
-	ret = modem_cmd_send(&mdata.context.iface, &mdata.context.cmd_handler,
-			     cmd, ARRAY_SIZE(cmd), sendbuf, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      cmd, ARRAY_SIZE(cmd), sendbuf,
+			      &mdata.sem_response, MDM_CMD_TIMEOUT, true);
 	if (ret < 0) {
 		errno = -ret;
 		ret = -1;
@@ -836,14 +898,154 @@ NET_SOCKET_REGISTER(ublox_sara_n310, AF_UNSPEC, offload_is_supported,
 		    offload_socket);
 
 /*
+ * Pin functions.
+ *
+ * The SARA-N310 forces the power pin low to achieve the following:
+ * min 1s - max 2.5s: trigger module switch-on
+ * min 1s - max 2.5s: trigger module wake-up from PSM
+ * min 2.5s: trigger module switch-off
+ */
+static int turn_on_module(void)
+{
+	int ret, timeout = 0;
+
+	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+	modem_pin_write(&mdata.context, MDM_POWER, MDM_POWER_ENABLE);
+	k_sleep(K_MSEC(1500));
+
+	LOG_DBG("MDM_POWER_PIN -> DISABLE");
+	modem_pin_write(&mdata.context, MDM_POWER, MDM_POWER_DISABLE);
+
+	while (!is_awake() && (timeout++ < 5)) {
+		k_sleep(K_MSEC(10));
+	}
+
+	if (timeout >= 5) {
+		ret = -timeout;
+
+		return ret;
+	}
+
+	return 0;
+}
+
+static int turn_off_module(void)
+{
+	LOG_DBG("MDM_POWER_PIN -> ENABLE");
+	modem_pin_write(&mdata.context, MDM_POWER, MDM_POWER_ENABLE);
+	k_sleep(K_SECONDS(3));
+
+	LOG_DBG("MDM_POWER_PIN -> DISABLE");
+	modem_pin_write(&mdata.context, MDM_POWER, MDM_POWER_DISABLE);
+
+	return 0;
+}
+
+/* check if module is awake by checking V_INT value */
+static int is_awake(void)
+{
+	return modem_pin_read(&mdata.context, MDM_VINT);
+}
+
+/* PSM functions, exposed to application through header */
+/* Power mode setting, +NVSETPM */
+int n310_psm_set_mode(int psm_mode)
+{
+	int ret;
+	char buf[sizeof("AT+NVSETPM=##\r")];
+
+	snprintk(buf, sizeof(buf), "AT+NVSETPM=%d", psm_mode);
+
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, buf, &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
+
+	if (ret >= 0) {
+		LOG_INF("NVSETPM set with current configuration: %d", psm_mode);
+	} else {
+		LOG_ERR("Failed to set NVSETPM: %d", ret);
+	}
+
+	return ret;
+}
+
+/* Low clock mode setting, +CSCLK */
+int n310_psm_set_csclk(int setting)
+{
+	int ret;
+	char buf[sizeof("AT+CSCLK=#\r")];
+
+	snprintk(buf, sizeof(buf), "AT+CSCLK=%d", setting);
+
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, buf, &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
+
+	if (ret >= 0) {
+		LOG_INF("CSCLK set with current configuration: %d", setting);
+	} else {
+		LOG_ERR("Failed to set CSCLK: %d", ret);
+	}
+
+	return ret;
+}
+
+/* Power Saving Mode setting, +CPSMS */
+int n310_psm_config(int mode, char *periodic_TAU, char *active_time)
+{
+	int ret;
+	char buf[sizeof("AT+CPSMS=#,,,\"########\",\"########\"\r")];
+
+	snprintk(buf, sizeof(buf), "AT+CPSMS=%d,,,\"%s\",\"%s\"", mode,
+		 periodic_TAU, active_time);
+
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, buf, &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
+
+	if (ret >= 0) {
+		LOG_INF("CPSMS set with current configuration: %d, \"%s\", \"%s\"",
+			mode, log_strdup(periodic_TAU),
+			log_strdup(active_time));
+	} else {
+		LOG_ERR("Failed to set CPSMS: %d", ret);
+	}
+
+	return ret;
+}
+
+/* Pin initialization */
+static int pin_init(void)
+{
+	int ret;
+
+	LOG_INF("Initializing modem pins.");
+
+	turn_off_module();
+
+	/* wait until power is off */
+	while (is_awake() > 0) {
+		k_sleep(K_MSEC(100));
+	}
+
+	ret = turn_on_module();
+
+	if (ret < 0) {
+		LOG_ERR("Failed to turn on module.");
+		return ret;
+	}
+
+	LOG_INF("Done.");
+	return 0;
+}
+
+/*
  * Modem reset function.
  * Resets the modem, sends setup commands and waits for modem to be functional.
  */
 int n310_modem_reset(void)
 {
 	int ret = 0, counter = 0;
-
-	pin_init();
 
 	LOG_INF("Starting modem...");
 
@@ -856,42 +1058,34 @@ int n310_modem_reset(void)
 		SETUP_CMD_NOHANDLE("AT+CMEE=1"),
 		/* UNC messages for registration */
 		SETUP_CMD_NOHANDLE("AT+CREG=1"),
+		/* enable PSM URC for debugging */
+		SETUP_CMD_NOHANDLE("AT+NPSMR=1"),
 		/* enable PDP context */
 		SETUP_CMD_NOHANDLE("AT+CIPCA=1"),
-		/* enable PSM */
-		SETUP_CMD_NOHANDLE("AT+CPSMS=1,,,\"01011111\",\"00000000\""),
 		/* enable HEX mode for +USOWR, +USOST, +USORD and +USORF AT commands. */
 		SETUP_CMD_NOHANDLE("AT+UDCONF=1,1"),
-
 		/* get and store modem info */
 		SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
 		SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 		SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
 		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
-
 		/* enable functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 	};
 
-	/* reset module */
-	ret = modem_cmd_send(&mdata.context.iface, &mdata.context.cmd_handler,
-			     NULL, 0, "AT+NRB", &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
-
-	if (ret < 0) {
-		LOG_ERR("Module reboot failed: %d", ret);
-		return ret;
-	}
+	/* reset module through pins */
+	pin_init();
 
 	/* give modem time to start responding after restart */
 	ret = -1;
 
 	while (counter++ < 50 && ret < 0) {
 		k_sleep(K_SECONDS(2));
-		ret = modem_cmd_send(&mdata.context.iface,
-				     &mdata.context.cmd_handler, NULL, 0, "AT",
-				     &mdata.sem_response, MDM_CMD_TIMEOUT);
+		ret = send_at_command(&mdata.context.iface,
+				      &mdata.context.cmd_handler, NULL, 0, "AT",
+				      &mdata.sem_response, MDM_CMD_TIMEOUT,
+				      true);
 		if (ret < 0 && ret != -ETIMEDOUT) {
 			break;
 		}
@@ -915,9 +1109,9 @@ int n310_modem_reset(void)
 	}
 
 	/* register operator automatically */
-	ret = modem_cmd_send(&mdata.context.iface, &mdata.context.cmd_handler,
-			     NULL, 0, "AT+COPS=0", &mdata.sem_response,
-			     MDM_REGISTRATION_TIMEOUT);
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0, "AT+COPS=0", &mdata.sem_response,
+			      MDM_REGISTRATION_TIMEOUT, true);
 
 	if (ret < 0) {
 		LOG_ERR("AT+COPS error: %d", ret);
@@ -925,9 +1119,9 @@ int n310_modem_reset(void)
 	}
 
 	/* query for IP address once */
-	ret = modem_cmd_send(&mdata.context.iface, &mdata.context.cmd_handler,
-			     NULL, 0, "AT+CGPADDR=", &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0, "AT+CGPADDR=", &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to obtain IP address");
@@ -966,6 +1160,9 @@ static int n310_driver_init(const struct device *device)
 		LOG_ERR("cmd handler init error: %d", ret);
 		return ret;
 	}
+
+	mdata.context.pins = modem_pins;
+	mdata.context.pins_len = ARRAY_SIZE(modem_pins);
 
 	/* init modem socket */
 	mdata.socket_config.sockets = &mdata.sockets[0];
