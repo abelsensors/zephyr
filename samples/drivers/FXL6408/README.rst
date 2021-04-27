@@ -16,7 +16,7 @@ useing the :ref:`GPIO API <gpio_api>`.
 Requirements
 ************
 
-For the sample to work, the FXL6408 I2C adres must be configured as 0x43.
+For the sample to work, the FXL6408 I2C address must be configured as 0x43.
 Furtermore, to showcase writing to the expanders pins, there must be LEDs
 connected to pins 4-7.
 
@@ -27,7 +27,7 @@ Build and flash the FXL6408-sample as follows, changing ``reel_board`` for
 your board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
+   :zephyr-app: samples/drivers/FXL6408
    :board: reel_board
    :goals: build flash
    :compact:
