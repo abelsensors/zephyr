@@ -16,22 +16,15 @@ useing the :ref:`GPIO API <gpio_api>`.
 Requirements
 ************
 
-You will see this error if you try to build Blinky for an unsupported board:
-
-.. code-block:: none
-
-   Unsupported board: led0 devicetree alias is not defined
-
-The board must have an LED connected via a GPIO pin. These are called "User
-LEDs" on many of Zephyr's :ref:`boards`. The LED must be configured using the
-``led0`` :ref:`devicetree <dt-guide>` alias. This is usually done in the
-:ref:`BOARD.dts file <devicetree-in-out-files>` or a :ref:`devicetree overlay
-<set-devicetree-overlays>`.
+For the sample to work, the FXL6408 I2C adres must be configured as 0x43.
+Furtermore, to showcase writing to the expanders pins, there must be LEDs
+connected to pins 4-7.
 
 Building and Running
 ********************
 
-Build and flash Blinky as follows, changing ``reel_board`` for your board:
+Build and flash the FXL6408-sample as follows, changing ``reel_board`` for
+your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -39,4 +32,22 @@ Build and flash Blinky as follows, changing ``reel_board`` for your board:
    :goals: build flash
    :compact:
 
-After flashing, the LED starts to blink. Blinky does not print to the console.
+After flashing, the LEDs connected to the FXL6408 will start to blink and it
+will use the console to print the values read from pins.
+
+Sample output
+=============
+
+In this example pin 0 and 1 are briefly connected to ground followed by pin 2
+and 3 being connected to Vcc. The default value is 3 since in this sample
+pin 0 and 1 are configured as pull-up.
+
+.. code-block:: console
+
+   result: 3
+   result: 3
+   result: 3
+   result: 1
+   result: 2
+   result: 7
+   result: 11

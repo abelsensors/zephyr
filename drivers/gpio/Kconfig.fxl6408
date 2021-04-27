@@ -1,6 +1,6 @@
 # ST Microelectronics STM32L151XC MCU
 
-# Copyright (c) 2020 Abel Sensors
+# Copyright (c) 2021 Abel Sensors
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO_FXL6408

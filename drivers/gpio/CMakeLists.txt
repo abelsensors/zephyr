@@ -36,10 +36,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_NPCX       gpio_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_EMUL       gpio_emul.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_PSOC6      gpio_psoc6.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_PCAL6408A  gpio_pcal6408a.c)
-<<<<<<< HEAD
 zephyr_library_sources_ifdef(CONFIG_GPIO_EOS_S3     gpio_eos_s3.c)
-=======
->>>>>>> f6fccc4e97... drivers: fxl6408: FXL6408 pull-request base
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_FXL6408    gpio_fxl6408.c)
 

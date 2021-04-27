@@ -37,7 +37,6 @@ void main(void)
 
 	for (int i = 4; i <= 7; i++) {
 		gpio_config(gpio_dev, i, GPIO_OUTPUT | GPIO_PULL_DOWN);
-		gpio_config(gpio_dev, 0, GPIO_INPUT | GPIO_PULL_UP);
 	}
 
 	uint8_t value = 0xFF;
@@ -45,9 +44,9 @@ void main(void)
 
 	while (1) {
 		k_msleep(500);
-		gpio_port_set_masked_raw(gpio_dev, 0xF0, 0xF0);
+		gpio_port_set_masked_raw(gpio_dev, 0xF0, value);
 		gpio_port_get_raw(gpio_dev, &result);
 		printk("result: %d\n", result & 0x0F);
-		result ^= 0xFF;
+		value ^= 0xFF;
 	}
 }

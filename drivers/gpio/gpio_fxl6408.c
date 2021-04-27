@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Abel Sensors
+ * Copyright (c) 2021 Abel Sensors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -211,16 +211,19 @@ int gpio_fxl6408_init(const struct device *device)
 		(struct gpio_fxl6408_drv_data *const)device->data;
 	const struct device *i2c_master;
 
-	i2c_master = device_get_binding((char *)config->i2c_master_dev_name);
+    i2c_master = device_get_binding((char *)config->i2c_master_dev_name);
 	drv_data->i2c_master = i2c_master;
-	int ret = 0;
 	int adres = DT_INST_REG_ADDR(0);
 
 	if (!i2c_master) {
 		return -EINVAL;
 	}
 
-	ret = i2c_reg_write_byte(i2c_master, adres, REG_OUTPUT_HIGH_Z, 0x0);
+	int ret = i2c_reg_write_byte(i2c_master, adres, REG_OUTPUT_HIGH_Z, 0x0);
+
+	if (ret < 0) {
+        LOG_ERR("FXL6408: Initialization failed!");
+	}
 
 	k_sem_init(&drv_data->lock, 1, 1);
 
@@ -242,8 +245,8 @@ static int setup_pin_pullupdown(const struct device *dev, uint32_t pin,
 	const struct gpio_fxl6408_config *const config = dev->config;
 	struct gpio_fxl6408_drv_data *const drv_data =
 		(struct gpio_fxl6408_drv_data *const)dev->data;
-	uint8_t reg_pud;
-	int ret;
+	uint8_t reg_pud = 0;
+	int ret = 0;
 
 	/* If disabling pull up/down, there is no need to set the selection
 	 * register. Just go straight to disabling.
@@ -273,9 +276,9 @@ static int setup_pin_pullupdown(const struct device *dev, uint32_t pin,
 static int gpio_fxl6408_config(const struct device *dev, gpio_pin_t pin,
 				   gpio_flags_t flags)
 {
-	int ret;
 	struct gpio_fxl6408_drv_data *const drv_data =
 		(struct gpio_fxl6408_drv_data *const)dev->data;
+	int ret = 0;
 
 	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
 		return -ENOTSUP;
@@ -310,8 +313,8 @@ static int gpio_fxl6408_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	struct gpio_fxl6408_drv_data *const drv_data =
 		(struct gpio_fxl6408_drv_data *const)dev->data;
-	uint8_t buf;
-	int ret;
+	uint8_t buf = 0;
+	int ret = 0;
 
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
@@ -336,8 +339,8 @@ static int gpio_fxl6408_port_set_masked_raw(const struct device *dev,
 {
 	struct gpio_fxl6408_drv_data *const drv_data =
 		(struct gpio_fxl6408_drv_data *const)dev->data;
-	uint8_t reg_out;
-	int ret;
+	uint8_t reg_out = 0;
+	int ret = 0;
 
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
@@ -373,8 +376,8 @@ static int gpio_fxl6408_port_toggle_bits(const struct device *dev,
 {
 	struct gpio_fxl6408_drv_data *const drv_data =
 		(struct gpio_fxl6408_drv_data *const)dev->data;
-	uint8_t reg_out;
-	int ret;
+	uint8_t reg_out = 0;
+	int ret = 0;
 
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
