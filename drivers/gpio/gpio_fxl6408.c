@@ -391,7 +391,7 @@ static int gpio_fxl6408_port_toggle_bits(const struct device *dev,
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	reg out = drv_data->reg_cache.output;
+	reg_out = drv_data->reg_cache.output;
 	reg_out ^= mask;
 	ret = update_output_regs(dev, reg_out);
 
