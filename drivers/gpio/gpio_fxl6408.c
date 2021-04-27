@@ -382,6 +382,7 @@ static int gpio_fxl6408_port_toggle_bits(const struct device *dev,
 	struct gpio_fxl6408_drv_data *const drv_data =
 		(struct gpio_fxl6408_drv_data *const)dev->data;
 	int ret = 0;
+	uint8_t reg_out = 0;
 
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
@@ -390,7 +391,7 @@ static int gpio_fxl6408_port_toggle_bits(const struct device *dev,
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	uint8_t reg_out = drv_data->reg_cache.output;
+	reg out = drv_data->reg_cache.output;
 	reg_out ^= mask;
 	ret = update_output_regs(dev, reg_out);
 
