@@ -288,7 +288,7 @@ static int gpio_fxl6408_config(const struct device *dev, gpio_pin_t pin,
 	if (!(flags & SUPPORTED_CONFIG)) {
 		return -ENOTSUP;
 	}
-	if (flags & ~SUPPORTED_CONFIG){
+	if (flags & ~SUPPORTED_CONFIG) {
 		LOG_DBG("unsupported option.");
 	}
 	/* Can't do I2C bus operations from an ISR */
