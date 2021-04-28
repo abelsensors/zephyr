@@ -4,21 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <soc.h>
-#include <kernel.h>
-#include <ctype.h>
-#include <device.h>
-#include <init.h>
-#include <errno.h>
-
-#include <dt-bindings/gpio/gpio.h>
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
 #include "gpio_utils.h"
-#include <sys/byteorder.h>
-#include <sys/util.h>
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(fxl6408, CONFIG_FXL6408_LOG_LEVEL);
