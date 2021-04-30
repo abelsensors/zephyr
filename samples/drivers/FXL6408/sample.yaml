@@ -1,0 +1,10 @@
+sample:
+  name: FXLI2C
+tests:
+  sample.FXL6408:
+    tags: LED i2c gpio
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0")
+    depends_on: gpio i2c
+    harness: led
+    integration_platforms:
+      - frdm_k64f
