@@ -41,5 +41,6 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_RCAR       gpio_rcar.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CY8C95XX   gpio_cy8c95xx.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_FXL6408    gpio_fxl6408.c)
 
-zephyr_library_sources_ifdef(CONFIG_USERSPACE   gpio_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_USERSPACE       gpio_handlers.c)
