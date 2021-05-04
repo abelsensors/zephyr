@@ -47,7 +47,18 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 
 	/* Save the current SP_ELx */
 	mov	x4, sp
-	stp	x4, xzr,  [x2, ___callee_saved_t_sp_elx_OFFSET]
+	str	x4, [x2, ___callee_saved_t_sp_elx_OFFSET]
+
+	/* save current thread's exception depth */
+	mrs	x4, tpidrro_el0
+	lsr	x2, x4, #TPIDRROEL0_EXC_SHIFT
+	strb	w2, [x1, #_thread_offset_to_exception_depth]
+
+	/* retrieve next thread's exception depth */
+	ldrb	w2, [x0, #_thread_offset_to_exception_depth]
+	bic	x4, x4, #TPIDRROEL0_EXC_DEPTH
+	orr	x4, x4, x2, lsl #TPIDRROEL0_EXC_SHIFT
+	msr	tpidrro_el0, x4
 
 #ifdef CONFIG_SMP
 	/* save old thread into switch handle which is required by
@@ -82,7 +93,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	msr	sp_el0, x1
 
 	/* Restore SP_EL1 */
-	ldp	x1, xzr, [x2, ___callee_saved_t_sp_elx_OFFSET]
+	ldr	x1, [x2, ___callee_saved_t_sp_elx_OFFSET]
 	mov	sp, x1
 
 #ifdef CONFIG_USERSPACE
@@ -113,6 +124,15 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
+
+#ifdef CONFIG_FPU_SHARING
+	cmp	x1, #0x07 /*Access to SIMD or floating-point */
+	bne	1f
+	mov	x0, sp
+	bl	z_arm64_fpu_trap
+	b	z_arm64_exit_exc_fpu_done
+1:
+#endif
 
 	cmp	x1, #0x15 /* 0x15 = SVC */
 	bne	inv

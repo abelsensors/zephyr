@@ -555,7 +555,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 	  For asynchronous timekeeping, the kernel defines a "ticks" concept. A
 	  "tick" is the internal count in which the kernel does all its internal
-	  uptime and timeout bookeeping. Interrupts are expected to be delivered
+	  uptime and timeout bookkeeping. Interrupts are expected to be delivered
 	  on tick boundaries to the extent practical, and no fractional ticks
 	  are tracked.
 
@@ -784,6 +784,14 @@ config SMP
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
+
+config SMP_BOOT_DELAY
+	bool "Delay booting secondary cores"
+	depends on SMP
+	help
+	  By default Zephyr will boot all available CPUs during start up.
+	  Select this option to skip this and allow architecture code boot
+	  secondary CPUs at a later time.
 
 config MP_NUM_CPUS
 	int "Number of CPUs/cores"
