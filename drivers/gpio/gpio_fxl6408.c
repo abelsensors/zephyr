@@ -146,11 +146,13 @@ static inline int update_direction_regs(const struct device *dev, uint8_t value)
 		(struct gpio_fxl6408_drv_data *const)dev->data;
 
 	/* If there is a pin configured as output, disable HIGH-Z mode for that pin.
-	   HIGH-Z is currently not supported in the driver */
-	if(value != 0){
-		uint8_t* cache = 0;
-		int ret = write_port_regs(dev,REG_OUTPUT_HIGH_Z, cache, ~value );
-		if(ret  != 0){
+	 *  HIGH-Z is currently not supported in the driver
+	 */
+	if (value != 0) {
+		uint8_t *cache = 0;
+		int ret = write_port_regs(dev, REG_OUTPUT_HIGH_Z, cache, ~value);
+
+		if (ret != 0) {
 			LOG_ERR("error setting HIGH-Z");
 		}
 	}

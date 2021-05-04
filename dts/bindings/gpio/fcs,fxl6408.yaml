@@ -11,11 +11,6 @@ properties:
     label:
       required: true
 
-    has-pud:
-      type: boolean
-      required: false
-      description: Supports pull-up/pull-down
-
     "#gpio-cells":
       const: 1
 
