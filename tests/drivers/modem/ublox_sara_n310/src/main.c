@@ -2,23 +2,19 @@
  * Copyright (c) 2021 Abel Sensors
  *
  * SPDX-License-Identifier: Apache-2.0
-//  */
+// //  */
 
-#include <zephyr.h>
-#include <net/socket.h>
-#include <drivers/modem/ublox-sara-n310.h>
-#include <ztest.h>
+ #include <zephyr.h>
+// #include <net/socket.h>
+// #include <drivers/modem/ublox-sara-n310.h>
+ #include <ztest.h>
+#include <device.h>
 
-
-//#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-//#include <logging/log.h>
-//LOG_MODULE_REGISTER(main);
-
-#define N310_DEVICE_LABEL DT_LABEL(DT_INST(0, ublox_sara_n310))
+//#define N310_DEVICE_LABEL DT_LABEL(DT_INST(0, ublox_sara_n310))
 #define MAX_BUF 512
 // extern struct modem_data;
 
-static const struct device *dev_ubloxn3;
+//static const struct device *dev_ubloxn3;
 
 void test_testing(void){
         zassert_true(1, NULL);
@@ -30,35 +26,32 @@ void test_testing(void){
 }
 
 void test_device_struct(){
-        dev_ubloxn3 = device_get_binding(N310_DEVICE_LABEL);
-        zassert_not_null(dev_ubloxn3, "N310 device not found");
-        struct modem_data *mdm = dev_ubloxn3->data;
-        zassert_not_null(mdm, "N310 modem data not found");
+        // dev_ubloxn3 = device_get_binding(N310_DEVICE_LABEL);
+        // zassert_not_null(dev_ubloxn3, "N310 device not found");
+        // struct modem_data *mdm = dev_ubloxn3->data;
+        // zassert_not_null(mdm, "N310 modem data not found");
 
-        //   zassert_not_null(mdm->net_iface, "Net interface null");
-
-        //   uint8_t mac_addr[6] = mdm->mac_addr;
+        // zassert_not_null(mdm->net_iface, "Net interface null");
+        // uint8_t mac_addr[6] = mdm->mac_addr;
         // zassert_equal(mac_addr[0], 0, "");
         // zassert_equal(mac_addr[1], 0x10, "");
-        //zassert_equal((uint32_t *)(data->mac_addr + 2), )
-
-
+        // zassert_equal((uint32_t *)(data->mac_addr + 2), )
 }
 
 void test_info_set(){
-       zassert_not_null(n310_get_manufacturer(),"N310 Manufacturer not set");
-       zassert_not_null(n310_get_iccid(),"N310 iccid not set");
-       zassert_not_null(n310_get_model(),"N310 model not set");
-       zassert_not_null(n310_get_revision(),"N310 revision not set");
-       zassert_not_null(n310_get_imei(),"N310 imei not set");
-       zassert_not_null(n310_get_ip(),"N310 IP not set");
-
+    //    zassert_not_null(n310_get_manufacturer(),"N310 Manufacturer not set");
+    //    zassert_not_null(n310_get_iccid(),"N310 iccid not set");
+    //    zassert_not_null(n310_get_model(),"N310 model not set");
+    //    zassert_not_null(n310_get_revision(),"N310 revision not set");
+    //    zassert_not_null(n310_get_imei(),"N310 imei not set");
+    //    zassert_not_null(n310_get_ip(),"N310 IP not set");
 }
 
 void test_modem_data(){
     //   zassert_not_null(mdata.net_iface,"");
     //` zassert_not_null(mdata.modem_context);
 }
+
 
 /*
 extern int n310_get_state();
@@ -83,7 +76,6 @@ void test_modem_reset(void)
 */
 void test_main(void)
 {
-
 	ztest_test_suite(n310_test,
     ztest_unit_test(test_testing),
     ztest_unit_test(test_info_set),
@@ -96,7 +88,6 @@ void test_main(void)
 }
 
 /*
-
 int n310_modem_reset(void);
 
 char *n310_get_model(void);

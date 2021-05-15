@@ -1,0 +1,4 @@
+tests:
+  ublox_sara-n310.maintest:
+    platform_allow: frdm_k64f
+    tags: modem
