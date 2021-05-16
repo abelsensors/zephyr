@@ -5,16 +5,15 @@
 // //  */
 
  #include <zephyr.h>
-// #include <net/socket.h>
-// #include <drivers/modem/ublox-sara-n310.h>
+#include <net/socket.h>
+#include <drivers/modem/ublox-sara-n310.h>
  #include <ztest.h>
 #include <device.h>
-
-//#define N310_DEVICE_LABEL DT_LABEL(DT_INST(0, ublox_sara_n310))
+// #define N310_DEVICE_LABEL DT_LABEL(DT_INST(0, ublox_sara_n310))
 #define MAX_BUF 512
 // extern struct modem_data;
 
-//static const struct device *dev_ubloxn3;
+// static const struct device *dev_ubloxn3;
 
 void test_testing(void){
         zassert_true(1, NULL);

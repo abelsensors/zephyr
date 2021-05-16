@@ -6,10 +6,10 @@ project(ublox_sara_n310)
 
 
 
-# zephyr_library_include_directories(
-# 	${ZEPHYR_BASE}/drivers/modem/
-#     ${ZEPHYR_BASE}/subsys/net/lib/sockets
-# )
+zephyr_library_include_directories(
+	${ZEPHYR_BASE}/drivers/modem/
+    # ${ZEPHYR_BASE}/subsys/net/lib/sockets
+)
 target_sources(app PRIVATE src/main.c src/n310_stub.c)
 
 
