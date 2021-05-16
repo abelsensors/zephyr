@@ -27,4 +27,4 @@ const struct device *device_get_binding_stub(const char *name);
 
 
 /* file itself */
-// #include "ublox-sara-n310.c"
+//  #include "ublox-sara-n310.c"

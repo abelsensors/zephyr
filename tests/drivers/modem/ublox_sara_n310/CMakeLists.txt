@@ -5,11 +5,22 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(ublox_sara_n310)
 
 
-
 zephyr_library_include_directories(
-	${ZEPHYR_BASE}/drivers/modem/
-    # ${ZEPHYR_BASE}/subsys/net/lib/sockets
+    ${ZEPHYR_BASE}/include
+    ${ZEPHYR_BASE}/subsys/net/lib/socks/
+    ${ZEPHYR_BASE}/drivers/modem/
 )
+
+# zephyr_include_directories(
+#     ${ZEPHYR_BASE}/include
+#     ${ZEPHYR_BASE}/subsys/net/lib/sockets/
+#     #${ZEPHYR_BASE}/drivers/modem/
+#     # ${ZEPHYR_BASE}/subsys/net/lib/sockets
+# )
+
+
+# zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/lib/socks)
+
 target_sources(app PRIVATE src/main.c src/n310_stub.c)
 
 
