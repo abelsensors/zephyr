@@ -1,0 +1,2 @@
+test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size
+tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest,arm,mps2_an385,passed,,qemu,2.0573976039886475,0,0

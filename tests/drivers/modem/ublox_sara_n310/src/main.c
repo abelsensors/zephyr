@@ -44,7 +44,7 @@
 // 			   socklen_t *addrlen);
 // };
 
-extern struct socket_op_vtable* offload_socket_fd_op_vtable_mock;
+// extern struct socket_op_vtable* offload_socket_fd_op_vtable_mock;
 //  struct socket_op_vtable* offload_socket_fd_op_vtable_mock;
 
 //static struct socket_op_vtable_mock* offload_socket_fd_op_vtable_mock;
@@ -61,16 +61,16 @@ void setup_tests(void)
 	// 	.close = offload_close,
 	// 	.ioctl = NULL,
 	// },
-	offload_socket_fd_op_vtable_mock->fd_vtable.read = NULL;
-	offload_socket_fd_op_vtable_mock->bind = NULL;
-	offload_socket_fd_op_vtable_mock->connect = NULL;
-	offload_socket_fd_op_vtable_mock->sendto = NULL;
-	offload_socket_fd_op_vtable_mock->recvfrom = NULL;
-	offload_socket_fd_op_vtable_mock->listen = NULL;
-	offload_socket_fd_op_vtable_mock->accept = NULL;
-	offload_socket_fd_op_vtable_mock->sendmsg = NULL;
-	offload_socket_fd_op_vtable_mock->getsockopt = NULL;
-	offload_socket_fd_op_vtable_mock->setsockopt = NULL;
+	// offload_socket_fd_op_vtable_mock->fd_vtable.read = NULL;
+	// offload_socket_fd_op_vtable_mock->bind = NULL;
+	// offload_socket_fd_op_vtable_mock->connect = NULL;
+	// offload_socket_fd_op_vtable_mock->sendto = NULL;
+	// offload_socket_fd_op_vtable_mock->recvfrom = NULL;
+	// offload_socket_fd_op_vtable_mock->listen = NULL;
+	// offload_socket_fd_op_vtable_mock->accept = NULL;
+	// offload_socket_fd_op_vtable_mock->sendmsg = NULL;
+	// offload_socket_fd_op_vtable_mock->getsockopt = NULL;
+	// offload_socket_fd_op_vtable_mock->setsockopt = NULL;
 }
 
 void test_testing(void){
@@ -110,7 +110,7 @@ void test_modem_data(){
 }
 
 void test_status(){
-	ztest_returns_value(modem_cmd_send, 0);
+	//ztest_returns_value(modem_cmd_send, 0);
 	//ztest_return_data(modem_cmd_send,)
 	int ret = n310_get_state();
 	zassert_true(ret>=0,"n310 state not working correctly");

@@ -1,0 +1,2 @@
+ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc libboards__arm__mps2_an385.a  CMakeFiles/boards__arm__mps2_an385.dir/pinmux.c.obj
+ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib libboards__arm__mps2_an385.a

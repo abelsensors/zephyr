@@ -1,0 +1,46 @@
+handler_init
+uart_init
+b4
+after
+1
+2
+4
+5
+I: Starting modem...
+6
+7
+7.1
+8
+handler_setup9
+10
+11
+I: Modem is ready.
+3
+sys_rand_get*** Booting Zephyr OS build zephyr-v2.5.0-609-g030333690e16  ***
+Running test suite n310_test
+===================================================================
+START - test_testing
+ PASS - test_testing
+===================================================================
+START - test_info_set
+ PASS - test_info_set
+===================================================================
+START - test_device_struct
+ PASS - test_device_struct
+===================================================================
+START - test_status
+ PASS - test_status
+===================================================================
+Test suite n310_test succeeded
+===================================================================
+PROJECT EXECUTION SUCCESSFUL
+E: ***** MPU FAULT *****
+E:   Data Access Violation
+E:   MMFAR Address: 0x0
+E: r0/a1:  0x00000000  r1/a2:  0x20000c50  r2/a3:  0x00000001
+E: r3/a4:  0x00000000 r12/ip:  0x00000000 r14/lr:  0x00005bc9
+E:  xpsr:  0x21000000
+E: Faulting instruction address (r15/pc): 0x00005c80
+E: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0
+E: Current thread: 0x20000c50 (unknown)
+E: Halting system

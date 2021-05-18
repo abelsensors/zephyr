@@ -36,6 +36,8 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 const struct setup_cmd *cmds, size_t cmds_len,
 				 struct k_sem *sem, k_timeout_t timeout)
 {
+    printk("handler_setup");
+
 	return 0;
 }
 
@@ -47,6 +49,8 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 			  const uint8_t *buf, struct k_sem *sem,
 			  k_timeout_t timeout)
 {
+    printk("modem_cmd_send_nolock");
+
 	return 0;
 }
 
@@ -54,6 +58,8 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 int modem_cmd_handler_init(struct modem_cmd_handler *handler,
 			   struct modem_cmd_handler_data *data)
 {
+    printk("handler_init\n");
+    
     return 0;
 }
 
@@ -62,18 +68,24 @@ int modem_iface_uart_init(struct modem_iface *iface,
 			  struct modem_iface_uart_data *data,
 			  const char *dev_name)
 {
+    printk("uart_init\n");
+
     return 0;
 }
 
 int modem_cmd_handler_set_error(struct modem_cmd_handler_data *data,
 				int error_code)
 {
+    printk("set_error");
+
     return 0;
 }
 
 
 int modem_cmd_handler_get_error(struct modem_cmd_handler_data *data)
 {
+    printk("get_error");
+
 	return 0;
 }
 
@@ -82,12 +94,15 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
 				  size_t handler_cmds_len,
 				  bool reset_error_flag)
 {
+    printk("update");
+
     return 0;
 }
 
-uint32_t z_impl_sys_rand32_get(void)
+int z_impl_sys_rand32_get(void)
 {
-return 3;
+	printk("sys_rand_get");
+	return 32;
 }
 
 /* needed for stubbing device driver */
@@ -95,9 +110,11 @@ const struct device *device_get_binding_stub(const char *name);
 #define device_get_binding device_get_binding_stub
 #define  CONFIG_MODEM_UBLOX_SARA_N310_INIT_PRIORITY 80
 
+#define k_sleep k_sleep_stub
+void k_sleep_stub(k_timeout_t a) {}
 
 /* file itself */
  #include "ublox-sara-n310.c"
 
 // extern const struct socket_op_vtable offload_socket_fd_op_vtable;
-struct socket_op_vtable* offload_socket_fd_op_vtable_mock = (struct socket_op_vtable*)(&offload_socket_fd_op_vtable);
+//struct socket_op_vtable* offload_socket_fd_op_vtable_mock = (struct socket_op_vtable*)(&offload_socket_fd_op_vtable);
