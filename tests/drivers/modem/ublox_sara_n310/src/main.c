@@ -13,8 +13,16 @@
 #include <sys/fdtable.h>
 
 
+#include <modem_context.h>
+#include <modem_cmd_handler.h>
+#include <modem_iface_uart.h>
+#include <ztest.h>
+
+
+
 #define N310_DEVICE_LABEL DT_LABEL(DT_INST(0, ublox_sara_n310))
 #define MAX_BUF 512
+
 
 
 // struct fd_op_vtable {
@@ -109,11 +117,19 @@ void test_modem_data(){
     //` zassert_not_null(mdata.modem_context);
 }
 
+
+
+
+
+
 void test_status(){
-	//ztest_returns_value(modem_cmd_send, 0);
 	//ztest_return_data(modem_cmd_send,)
+	//ztest_returns_value(modem_cmd_send, 0);
 	int ret = n310_get_state();
 	zassert_true(ret>=0,"n310 state not working correctly");
+	//ztest_returns_value(modem_cmd_send, 1);
+	// ret = n310_get_state();
+//	zassert_true(ret<0,"n310 state not working correctly");
 }
 
 void test_main(void)
