@@ -44,8 +44,8 @@
 // 			   socklen_t *addrlen);
 // };
 
-extern const struct socket_op_vtable offload_socket_fd_op_vtable;
- struct socket_op_vtable* offload_socket_fd_op_vtable_mock;
+extern struct socket_op_vtable* offload_socket_fd_op_vtable_mock;
+//  struct socket_op_vtable* offload_socket_fd_op_vtable_mock;
 
 //static struct socket_op_vtable_mock* offload_socket_fd_op_vtable_mock;
 
@@ -54,8 +54,7 @@ static const struct device *dev_ubloxn3;
 
 void setup_tests(void)
 {
-	offload_socket_fd_op_vtable_mock =
-		(struct socket_op_vtable *)&offload_socket_fd_op_vtable;
+	
 	/* these need to be implemented */
 	// 	.read = NULL,
 	// 	.write = NULL,
