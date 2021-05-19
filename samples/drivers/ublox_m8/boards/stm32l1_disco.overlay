@@ -3,10 +3,10 @@
 	status = "okay";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
  
-	neo_m8n: neo_m8n@42 {
+	neo-m8: neo-m8@42 {
 		status = "okay";
-		compatible = "";
-		label = "UBLX_NEO_M8N";
+		compatible = "ublox,neo-m8";
+		label = "NEO_M8";
 		reg = <0x42>;
 	};
 };

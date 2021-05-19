@@ -11,19 +11,6 @@
 
 const struct device * i2c_dev;
 
-static void init(){
-
-	i2c_dev = device_get_binding("I2C_0");
-	if (!i2c_dev) {
-		printk("I2C: Device driver not found.\n");
-		return;
-	} 
-	else {
-		i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_FAST));
-		return;
-    }
-}
-
 static int write_bytes(const struct device *i2c_dev, uint16_t addr,
 		       uint8_t *data, uint32_t num_bytes)
 {
@@ -84,7 +71,13 @@ void main(void)
 	uint8_t data[16];
 	int ret;
 
-		init();
+		i2c_dev = device_get_binding("I2C_1");
+	if (!i2c_dev) {
+		printk("I2C: Device driver not found.\n");
+	} 
+	else {
+		i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_FAST));
+    }
 
 	/* Do one-byte read/write */
 
