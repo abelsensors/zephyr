@@ -315,7 +315,7 @@ int lis2dh_init(const struct device *dev)
 	raw[0] = LIS2DH_ACCEL_EN_BITS;
 
 	status = lis2dh->hw_tf->write_data(dev, LIS2DH_REG_CTRL1, raw,
-					   sizeof(raw));
+						sizeof(raw));
 
 	if (status < 0) {
 		LOG_ERR("Failed to reset ctrl registers.");
@@ -325,11 +325,24 @@ int lis2dh_init(const struct device *dev)
 	/* set full scale range and store it for later conversion */
 	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4,
-					  LIS2DH_FS_BITS | LIS2DH_HR_BIT);
+					LIS2DH_FS_BITS | LIS2DH_HR_BIT);
 	if (status < 0) {
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
 	}
+
+	/* set High-pass filter mode */
+	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL2,
+					(uint8_t)LIS2DH_HPM_BITS);
+	if (status < 0) {
+		LOG_ERR("Failed to set full scale ctrl register.");
+		return status;
+	}
+	/* For debugging purposes */
+	uint8_t reg2;
+	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL2, &reg2);
+	LOG_INF("HMP1=%X and %X", reg2, (uint8_t)LIS2DH_HPM_BITS);
+	/* End of debugging purposes */
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {

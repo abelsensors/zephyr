@@ -85,8 +85,29 @@
 #define LIS2DH_ODR_MASK			(BIT_MASK(4) << LIS2DH_ODR_SHIFT)
 
 #define LIS2DH_REG_CTRL2		0x21
+#define LIS2DH_HPIS1_EN_BIT		BIT(0)
 #define LIS2DH_HPIS2_EN_BIT		BIT(1)
 #define LIS2DH_FDS_EN_BIT		BIT(3)
+
+#define LIS2DH_HPM0				BIT(6)
+#define LIS2DH_HPM1				BIT(7)
+
+/* Temp for debugging, Turn this into KConfig */
+//#define CONFIG_LIS2DH_HPM_REFERENCE
+//#define CONFIG_LIS2DH_HPM_NORMAL
+//#define CONFIG_LIS2DH_HPM_INT_RESET
+/* end of temp */
+
+#if defined(CONFIG_LIS2DH_HPM_REFERENCE)
+	#define LIS2DH_HPM_BITS		LIS2DH_HPM0
+#elif defined(CONFIG_LIS2DH_HPM_NORMAL)
+	#define LIS2DH_HPM_BITS		LIS2DH_HPM1
+#elif defined(CONFIG_LIS2DH_HPM_INT_RESET)
+	#define LIS2DH_HPM_BITS		(LIS2DH_HPM0 | \
+								LIS2DH_HPM1)
+#else
+	#define LIS2DH_HPM_BITS		0
+#endif		
 
 #define LIS2DH_REG_CTRL3		0x22
 #define LIS2DH_EN_DRDY1_INT1_SHIFT	4
