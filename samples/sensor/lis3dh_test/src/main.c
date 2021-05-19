@@ -95,6 +95,16 @@ void main(void)
 	}
 #else /* CONFIG_LIS2DH_TRIGGER */
 	printf("Polling at 2 Hz\n");
+
+	const struct sensor_value test1 = {(uint16_t)100, 0}; //0, 1, 10, 25, 50, 100, 200, 400, 1620, 1344, 5376
+
+	sensor_attr_set(
+		sensor,
+		SENSOR_CHAN_ACCEL_XYZ,
+		SENSOR_ATTR_SAMPLING_FREQUENCY,
+		&test1 
+	);
+
 	while (true) {
 		fetch_and_display(sensor);
 		k_sleep(K_MSEC(50));
