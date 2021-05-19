@@ -1,5 +1,6 @@
 #include "n310_modem_cmd_handler_mock.h"
 
+#include "tracing.h"
  int cmd_handler_process_iface_data(struct modem_cmd_handler_data *data,
 					  struct modem_iface *iface)
 {

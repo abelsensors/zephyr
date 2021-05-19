@@ -15,6 +15,22 @@
 #include "n310_modem_cmd_handler_mock.h"
 
 
+#include <zephyr.h>
+#include <net/socket.h>
+#include <drivers/modem/ublox-sara-n310.h>
+#include <ztest.h>
+#include <device.h>
+#include "sockets_internal.h"
+#include <sys/fdtable.h>
+
+
+#include <modem_context.h>
+#include <modem_cmd_handler.h>
+#include <modem_iface_uart.h>
+#include <ztest.h>
+
+
+
 static void cmd_handler_process(struct modem_cmd_handler *cmd_handler,
 				struct modem_iface *iface)
 {
