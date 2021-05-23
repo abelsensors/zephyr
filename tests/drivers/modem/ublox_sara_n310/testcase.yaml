@@ -2,6 +2,6 @@ tests:
   ublox_sara-n310.maintest:
     #platform_allow: qemu_cortex_m3
     tags: modem
-    platform_allow: mps2_an385
+    platform_allow: qemu_cortex_m3
     # platform_exclude: frdm_k64f qemu_leon3 qemu_cortex_a53 qemu_cortex_r5 qemu_arc_hs nsim_em7d_v22 
     #qemu a53 and r5 have no drivers for gpio?

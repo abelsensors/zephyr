@@ -21,7 +21,8 @@ zephyr_library_include_directories(
 
 # zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/lib/socks)
 
-target_sources(app PRIVATE src/main.c src/n310_stub.c src/n310_modem_cmd_handler_mock.c)
+target_sources(app PRIVATE src/main.c src/n310_stub.c )
+# target_sources(app PRIVATE src/main.c src/n310_stub.c src/n310_modem_cmd_handler_mock.c)
 
 
 
