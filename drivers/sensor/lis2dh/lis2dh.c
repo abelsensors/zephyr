@@ -338,6 +338,34 @@ int lis2dh_init(const struct device *dev)
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
 	}
+
+#if CONFIG_LIS2DH_WAKE_THS > 0 && CONFIG_LIS2DH_WAKE_DUR > 0
+	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_ACT_TH,
+					(uint8_t)CONFIG_LIS2DH_WAKE_THS);
+
+	if (unlikely(status < 0)) {
+		LOG_ERR("Failed to set Inertial Wake-Up threshold register.");
+		return status;
+	}
+
+	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_ACT_DUR,
+					(uint8_t)CONFIG_LIS2DH_WAKE_DUR);
+
+	if (unlikely(status < 0)) {
+		LOG_ERR("Failed to set Inertial Wake-Up duration register.");
+		return status;
+	}
+#elif CONFIG_LIS2DH_WAKE_THS < 0 || CONFIG_LIS2DH_WAKE_DUR < 0
+	LOG_ERR("CONFIG_LIS2DH_WAKE_THS or CONFIG_LIS2DH_WAKE_DUR was set \
+			to a negative value. Both values must be positive!");
+	return -EINVAL;
+#elif (CONFIG_LIS2DH_WAKE_THS == 0 && CONFIG_LIS2DH_WAKE_DUR > 0) || \
+	(CONFIG_LIS2DH_WAKE_THS > 0 && CONFIG_LIS2DH_WAKE_DUR == 0)
+	LOG_ERR("CONFIG_LIS2DH_WAKE_THS or CONFIG_LIS2DH_WAKE_DUR was set \
+			without the other. Both values need to be set!");
+	return -EINVAL;
+#endif
+
 	/* For debugging purposes */
 	uint8_t reg2;
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL2, &reg2);

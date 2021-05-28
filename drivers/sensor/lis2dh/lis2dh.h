@@ -175,11 +175,17 @@
 #define LIS2DH_INT_CFG_XHIE_XUPE	BIT(1)
 #define LIS2DH_INT_CFG_XLIE_XDOWNE	BIT(0)
 
+#define LIS2DH_REG_INT1_SRC		0x31
 #define LIS2DH_REG_INT2_SRC		0x35
 
+#define LIS2DH_REG_INT1_THS		0x32
 #define LIS2DH_REG_INT2_THS		0x36
 
+#define LIS2DH_REG_INT1_DUR		0x33
 #define LIS2DH_REG_INT2_DUR		0x37
+
+#define LIS2DH_REG_ACT_TH		0x3E
+#define LIS2DH_REG_ACT_DUR		0x3F
 
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7

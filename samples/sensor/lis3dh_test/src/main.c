@@ -40,7 +40,54 @@ static void fetch_and_display(const struct device *sensor)
 	}
 }
 
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if CONFIG_LIS2DH_ODR_RUNTIME
+void ODR_set(const struct device *sensor, uint16_t val1){
+	const struct sensor_value ODR_value = {val1, 0}; //0, 1, 10, 25, 50, 100, 200, 400, 1620, 1344, 5376
+
+	int status = sensor_attr_set(
+		sensor,
+		SENSOR_CHAN_ACCEL_XYZ,
+		SENSOR_ATTR_SAMPLING_FREQUENCY,
+		&ODR_value 
+	);
+	if(unlikely(status < 0)){
+		printf("Failed to set ODR (%u) with erno: %i\n", ODR_value.val1, status);
+	} else {
+		printf("Set ODR to %u\n", ODR_value.val1);
+	}
+	
+}
+#endif
+
+#if CONFIG_LIS2DH_TRIGGER
+void slope_TH_set(const struct device *sensor, uint16_t val1, uint16_t val2){
+	const struct sensor_value slope_TH_value = {val1, val2};
+	
+	int status = sensor_attr_set(sensor,
+		SENSOR_CHAN_ACCEL_XYZ,
+		SENSOR_ATTR_SLOPE_TH,
+		&slope_TH_value
+	);
+
+	if(status < 0){
+		printf("Failed to set SLOPE_TH (%u) with erno: %i", slope_TH_value.val1, status);
+	}
+}
+
+void slope_DUR_set(const struct device *sensor, uint8_t val1){
+	const struct sensor_value slope_DUR_value = {(uint16_t)val1, 0};
+	
+	int status = sensor_attr_set(sensor,
+		SENSOR_CHAN_ACCEL_XYZ,
+		SENSOR_ATTR_SLOPE_DUR,
+		&slope_DUR_value
+	);
+
+	if(status < 0){
+		printf("Failed to set SLOPE_DUR (%u) with erno: %i", slope_DUR_value.val1, status);
+	}
+}
+
 static void trigger_handler(const struct device *dev,
 			    struct sensor_trigger *trig)
 {
@@ -52,11 +99,16 @@ void main(void)
 {
 	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
 
-	if (sensor == NULL) {
+	if (unlikely(sensor == NULL)) {
 		printf("Could not get %s device\n",
 		       DT_LABEL(DT_INST(0, st_lis2dh)));
 		return;
 	}
+
+	//ODR_set(sensor, 100);
+	//slope_TH_set(sensor, 2, 1);
+	//slope_DUR_set(sensor, 2);
+	
 
 #if CONFIG_LIS2DH_TRIGGER
 	{
@@ -64,8 +116,10 @@ void main(void)
 		int rc;
 
 		trig.type = SENSOR_TRIG_DATA_READY;
+		//trig.type = SENSOR_TRIG_DELTA;
 		trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
+		/*
 		if (IS_ENABLED(CONFIG_LIS2DH_ODR_RUNTIME)) {
 			struct sensor_value odr = {
 				.val1 = 1,
@@ -80,6 +134,7 @@ void main(void)
 			}
 			printf("Sampling at %u Hz\n", odr.val1);
 		}
+		*/
 
 		rc = sensor_trigger_set(sensor, &trig, trigger_handler);
 		if (rc != 0) {
@@ -90,24 +145,15 @@ void main(void)
 		printf("Waiting for triggers\n");
 		while (true) {
 			k_sleep(K_MSEC(2000));
-			printf("Waiting...\n");
+			printf("[%u] - Waiting...\n\r", k_cycle_get_32());
 		}
 	}
 #else /* CONFIG_LIS2DH_TRIGGER */
-	printf("Polling at 2 Hz\n");
-
-	const struct sensor_value test1 = {(uint16_t)25, 0}; //0, 1, 10, 25, 50, 100, 200, 400, 1620, 1344, 5376
-
-	sensor_attr_set(
-		sensor,
-		SENSOR_CHAN_ACCEL_XYZ,
-		SENSOR_ATTR_SAMPLING_FREQUENCY,
-		&test1 
-	);
+	printf("Polling at 10 Hz\n");
 
 	while (true) {
 		fetch_and_display(sensor);
-		k_sleep(K_MSEC(200));
+		k_sleep(K_MSEC(100));
 	}
 #endif /* CONFIG_LIS2DH_TRIGGER */
 }
