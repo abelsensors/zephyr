@@ -1,0 +1,1 @@
+osource "/home/ilagas/zephyrproject/zephyr/soc/$(ARCH)/*/Kconfig.soc"

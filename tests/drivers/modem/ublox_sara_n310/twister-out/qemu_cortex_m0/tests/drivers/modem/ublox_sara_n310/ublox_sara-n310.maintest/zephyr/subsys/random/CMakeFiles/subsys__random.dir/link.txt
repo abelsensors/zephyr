@@ -1,0 +1,2 @@
+ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc libsubsys__random.a  CMakeFiles/subsys__random.dir/rand32_entropy_device.c.obj
+ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib libsubsys__random.a

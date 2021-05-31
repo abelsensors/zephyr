@@ -1,0 +1,88 @@
+2021-05-31 21:57:58,800 - twister - INFO - Zephyr version: v2.6.0-rc1-363-g6addc078a043
+2021-05-31 21:57:58,800 - twister - INFO - JOBS: 8
+2021-05-31 21:57:58,800 - twister - DEBUG - Reading test case configuration files under /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310...
+2021-05-31 21:57:58,800 - twister - DEBUG - Found possible test case in /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310
+2021-05-31 21:57:58,805 - twister - DEBUG - Reading platform configuration files under /home/ilagas/zephyrproject/zephyr/boards...
+2021-05-31 21:57:59,212 - twister - DEBUG - Reading platform configuration files under /home/ilagas/zephyrproject/zephyr/scripts/pylib/twister/boards...
+2021-05-31 21:57:59,212 - twister - DEBUG - Running cmake script /home/ilagas/zephyrproject/zephyr/cmake/verify-toolchain.cmake
+2021-05-31 21:57:59,213 - twister - DEBUG - Calling cmake with arguments: ['-DFORMAT=json', '-P', PosixPath('/home/ilagas/zephyrproject/zephyr/cmake/verify-toolchain.cmake')]
+2021-05-31 21:57:59,222 - twister - DEBUG - Finished running  /home/ilagas/zephyrproject/zephyr/cmake/verify-toolchain.cmake
+2021-05-31 21:57:59,224 - twister - INFO - Using 'zephyr' toolchain.
+2021-05-31 21:57:59,224 - twister - DEBUG - platform filter: None
+2021-05-31 21:57:59,224 - twister - DEBUG -     arch_filter: None
+2021-05-31 21:57:59,225 - twister - DEBUG -      tag_filter: None
+2021-05-31 21:57:59,225 - twister - DEBUG -     exclude_tag: None
+2021-05-31 21:57:59,225 - twister - INFO - Selecting emulation platforms per test case
+2021-05-31 21:57:59,225 - twister - INFO - Building initial testcase list...
+2021-05-31 21:57:59,226 - twister - DEBUG - qemu_leon3                tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,226 - twister - DEBUG - generic_leon3             tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - gr716a_mini               tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - mps2_an385                tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - mps2_an521                tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - mps2_an521_nonsecure      tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - qemu_cortex_r5            tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - qemu_cortex_a53_smp       tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - qemu_cortex_a53           tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - qemu_cortex_a53_xip       tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - qemu_arc_hs               tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - qemu_arc_em               tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - qemu_arc_hs6x             tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - nsim_em7d_v22             tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,227 - twister - DEBUG - nsim_hs6x                 tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - nsim_sem_mpu_stack_guard  tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - nsim_hs_smp               tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - nsim_hs                   tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - nsim_em                   tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - nsim_sem                  tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_tiny             tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_virt             tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_64_nokpti        tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_nokpti           tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86                  tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_nopae            tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_xip              tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_lakemont         tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_coverage         tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_nommu            tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,228 - twister - DEBUG - qemu_x86_64               tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,229 - twister - DEBUG - qemu_nios2                tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,229 - twister - DEBUG - qemu_xtensa               tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,229 - twister - DEBUG - m2gl025_miv               tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,229 - twister - DEBUG - qemu_riscv64              tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,229 - twister - DEBUG - qemu_riscv32_xip          tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,229 - twister - DEBUG - qemu_riscv32              tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [33mSKIPPED[39m: Not in testcase platform allow list
+2021-05-31 21:57:59,229 - twister - INFO - 1 test scenarios (39 configurations) selected, 37 configurations discarded due to filters.
+2021-05-31 21:57:59,249 - twister - INFO - Adding tasks to the queue...
+2021-05-31 21:57:59,249 - twister - DEBUG - adding qemu_cortex_m0/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest
+2021-05-31 21:57:59,252 - twister - DEBUG - adding qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest
+2021-05-31 21:57:59,253 - twister - INFO - Added initial list of jobs to queue
+2021-05-31 21:57:59,253 - twister - DEBUG - Launch process 0
+2021-05-31 21:57:59,254 - twister - DEBUG - Launch process 1
+2021-05-31 21:57:59,256 - twister - DEBUG - Launch process 2
+2021-05-31 21:57:59,257 - twister - DEBUG - Launch process 3
+2021-05-31 21:57:59,260 - twister - DEBUG - Running cmake on /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310 for qemu_cortex_m3
+2021-05-31 21:57:59,260 - twister - DEBUG - Calling cmake with arguments: ['-B/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest', '-S/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310', '-DEXTRA_CFLAGS="-Werror"', '-DEXTRA_AFLAGS="-Wa,--fatal-warnings', '-DEXTRA_LDFLAGS="-Wl,--fatal-warnings"', '-DEXTRA_GEN_DEFINES_ARGS=--err-on-deprecated-properties', '-GUnix Makefiles', '-DQEMU_PIPE=/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/qemu-fifo', '-DBOARD=qemu_cortex_m3']
+2021-05-31 21:57:59,261 - twister - DEBUG - Launch process 4
+2021-05-31 21:57:59,262 - twister - DEBUG - Running cmake on /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310 for qemu_cortex_m0
+2021-05-31 21:57:59,262 - twister - DEBUG - Calling cmake with arguments: ['-B/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m0/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest', '-S/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310', '-DEXTRA_CFLAGS="-Werror"', '-DEXTRA_AFLAGS="-Wa,--fatal-warnings', '-DEXTRA_LDFLAGS="-Wl,--fatal-warnings"', '-DEXTRA_GEN_DEFINES_ARGS=--err-on-deprecated-properties', '-GUnix Makefiles', '-DQEMU_PIPE=/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m0/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/qemu-fifo', '-DBOARD=qemu_cortex_m0']
+2021-05-31 21:57:59,264 - twister - DEBUG - Launch process 5
+2021-05-31 21:57:59,267 - twister - DEBUG - Launch process 6
+2021-05-31 21:57:59,270 - twister - DEBUG - Launch process 7
+2021-05-31 21:58:01,541 - twister - DEBUG - Finished building /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310 for qemu_cortex_m3
+2021-05-31 21:58:01,544 - twister - DEBUG - build test: qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest
+2021-05-31 21:58:01,544 - twister - DEBUG - Building /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310 for qemu_cortex_m3
+2021-05-31 21:58:01,620 - twister - DEBUG - Finished building /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310 for qemu_cortex_m0
+2021-05-31 21:58:01,622 - twister - DEBUG - build test: qemu_cortex_m0/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest
+2021-05-31 21:58:01,622 - twister - DEBUG - Building /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310 for qemu_cortex_m0
+2021-05-31 21:58:02,393 - twister - INFO - 1/2 qemu_cortex_m3            tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [31mFAILED [39mBuild failure (qemu)
+2021-05-31 21:58:02,393 - twister - ERROR - see: [33m/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/build.log[39m
+2021-05-31 21:58:02,529 - twister - INFO - 2/2 qemu_cortex_m0            tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest [31mFAILED [39mBuild failure (qemu)
+2021-05-31 21:58:02,529 - twister - ERROR - see: [33m/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m0/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/build.log[39m
+2021-05-31 21:58:02,534 - twister - DEBUG - running footprint_reports
+2021-05-31 21:58:02,833 - twister - INFO - [32m0 of 2[39m test configurations passed (0.00%), [31m2[39m failed, 37 skipped with [39m0[39m warnings in 4.05 seconds
+2021-05-31 21:58:02,833 - twister - INFO - In total 8 test cases were executed, 148 skipped on 2 out of total 372 platforms (0.54%)
+2021-05-31 21:58:02,833 - twister - INFO - [32m0[39m test configurations executed on platforms, [31m2[39m test configurations were only built.
+2021-05-31 21:58:02,833 - twister - INFO - Saving reports...
+2021-05-31 21:58:02,833 - twister - INFO - Writing xunit report /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/twister.xml...
+2021-05-31 21:58:02,840 - twister - INFO - Writing xunit report /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/twister_report.xml...
+2021-05-31 21:58:02,847 - twister - INFO - Run completed

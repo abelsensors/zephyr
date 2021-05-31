@@ -1,0 +1,64 @@
+Including boilerplate (Zephyr base): /home/ilagas/zephyrproject/zephyr/cmake/app/boilerplate.cmake
+-- Application: /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310
+-- Zephyr version: 2.6.0-rc1 (/home/ilagas/zephyrproject/zephyr), build: v2.6.0-rc1-363-g6addc078a043
+-- Found Python3: /usr/bin/python3.6 (found suitable exact version "3.6.12") found components: Interpreter 
+-- Found west (found suitable version "0.11.0", minimum required is "0.7.1")
+-- Board: qemu_cortex_m3
+-- Cache files will be written to: /home/ilagas/.cache/zephyr
+-- ZEPHYR_TOOLCHAIN_VARIANT not set, trying to locate Zephyr SDK
+-- Using toolchain: zephyr 0.12.4 (/home/ilagas/zephyr-sdk-0.12.4)
+-- Found dtc: /home/ilagas/zephyr-sdk-0.12.4/sysroots/x86_64-pokysdk-linux/usr/bin/dtc (found suitable version "1.5.0", minimum required is "1.4.6")
+-- Found BOARD.dts: /home/ilagas/zephyrproject/zephyr/boards/arm/qemu_cortex_m3/qemu_cortex_m3.dts
+-- Found devicetree overlay: /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/boards/qemu_cortex_m3.overlay
+-- Generated zephyr.dts: /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/zephyr/zephyr.dts
+-- Generated devicetree_unfixed.h: /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/zephyr/include/generated/devicetree_unfixed.h
+-- Generated device_extern.h: /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/zephyr/include/generated/device_extern.h
+Parsing /home/ilagas/zephyrproject/zephyr/Kconfig
+Loaded configuration '/home/ilagas/zephyrproject/zephyr/boards/arm/qemu_cortex_m3/qemu_cortex_m3_defconfig'
+Merged configuration '/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/prj.conf'
+Configuration saved to '/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/zephyr/.config'
+Kconfig header saved to '/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest/zephyr/include/generated/autoconf.h'
+
+warning: QEMU_ICOUNT_SHIFT (defined at boards/Kconfig:40) was assigned the value '6' but got the
+value ''. Check these unsatisfied dependencies: QEMU_ICOUNT (=n). See
+http://docs.zephyrproject.org/latest/reference/kconfig/CONFIG_QEMU_ICOUNT_SHIFT.html and/or look up
+QEMU_ICOUNT_SHIFT in the menuconfig/guiconfig interface. The Application Development Primer, Setting
+Configuration Values, and Kconfig - Tips and Best Practices sections of the manual might be helpful
+too.
+
+-- The C compiler identification is GNU 10.2.0
+-- The CXX compiler identification is GNU 10.2.0
+-- The ASM compiler identification is GNU
+-- Found assembler: /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/twister-out/qemu_cortex_m3/tests/drivers/modem/ublox_sara_n310/ublox_sara-n310.maintest
+Scanning dependencies of target parse_syscalls_target
+[  1%] Generating misc/generated/syscalls.json, misc/generated/struct_tags.json
+[  2%] Built target parse_syscalls_target
+Scanning dependencies of target kobj_types_h_target
+[  2%] Generating include/generated/kobj-types-enum.h, include/generated/otype-to-str.h, include/generated/otype-to-size.h
+[  2%] Built target kobj_types_h_target
+Scanning dependencies of target syscall_list_h_target
+[  3%] Generating include/generated/syscall_dispatch.c, include/generated/syscall_list.h
+[  3%] Built target syscall_list_h_target
+Scanning dependencies of target driver_validation_h_target
+[  4%] Generating include/generated/driver-validation.h
+[  4%] Built target driver_validation_h_target
+Scanning dependencies of target offsets
+[  5%] Building C object zephyr/CMakeFiles/offsets.dir/arch/arm/core/offsets/offsets.c.obj
+[  5%] Built target offsets
+Scanning dependencies of target offsets_h
+[  5%] Generating include/generated/offsets.h
+[  5%] Built target offsets_h
+Scanning dependencies of target zephyr_generated_headers
+[  5%] Built target zephyr_generated_headers
+Scanning dependencies of target app
+[  5%] Building C object CMakeFiles/app.dir/src/main.c.obj
+[01m[K/home/ilagas/zephyrproject/zephyr/tests/drivers/modem/ublox_sara_n310/src/main.c:9:10:[m[K [01;31m[Kfatal error: [m[Kdrivers/modem/ublox-sara-n310.h: No such file or directory
+    9 | #include [01;31m[K<drivers/modem/ublox-sara-n310.h>[m[K
+      |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+compilation terminated.
+gmake[2]: *** [CMakeFiles/app.dir/build.make:80: CMakeFiles/app.dir/src/main.c.obj] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:2278: CMakeFiles/app.dir/all] Error 2
+gmake: *** [Makefile:101: all] Error 2

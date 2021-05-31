@@ -1,0 +1,2 @@
+ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc libsubsys__testsuite__ztest.a  CMakeFiles/subsys__testsuite__ztest.dir/src/ztest.c.obj CMakeFiles/subsys__testsuite__ztest.dir/src/ztest_error_hook.c.obj CMakeFiles/subsys__testsuite__ztest.dir/src/ztest_mock.c.obj
+ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib libsubsys__testsuite__ztest.a

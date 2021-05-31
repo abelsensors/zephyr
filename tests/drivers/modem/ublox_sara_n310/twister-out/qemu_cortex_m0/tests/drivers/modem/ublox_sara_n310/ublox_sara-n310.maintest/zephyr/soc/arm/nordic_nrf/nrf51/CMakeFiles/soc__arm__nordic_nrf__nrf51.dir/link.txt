@@ -1,0 +1,2 @@
+ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc libsoc__arm__nordic_nrf__nrf51.a  CMakeFiles/soc__arm__nordic_nrf__nrf51.dir/soc.c.obj CMakeFiles/soc__arm__nordic_nrf__nrf51.dir/power.c.obj
+ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib libsoc__arm__nordic_nrf__nrf51.a

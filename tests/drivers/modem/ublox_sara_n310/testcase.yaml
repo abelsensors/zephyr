@@ -1,0 +1,4 @@
+tests:
+  ublox_sara-n310.maintest:
+    tags: modem
+    platform_allow: qemu_cortex_m3 qemu_cortex_m0

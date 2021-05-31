@@ -1,0 +1,9 @@
+&uart0 {
+    status = "okay";
+    current-speed = <57600>;
+
+    saran310 {
+        compatible = "ublox,sara-n310";
+        label = "SARAN310";
+    };
+};
