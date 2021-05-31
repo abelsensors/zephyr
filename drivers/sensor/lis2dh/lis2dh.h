@@ -184,6 +184,21 @@
 #define LIS2DH_REG_ACT_TH		0x3E
 #define LIS2DH_REG_ACT_DUR		0x3F
 
+#define LIS2DH_WAKE_THS_ABS_MAX	127
+
+#if defined CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	86
+#elif ((defined CONFIG_LIS2DH_ACCEL_RANGE_2G) ||\
+defined(CONFIG_LIS2DH_ACCEL_RANGE_4G))
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	125
+#elif defined(CONFIG_LIS2DH_ACCEL_RANGE_8G)
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	127
+#elif defined(CONFIG_LIS2DH_ACCEL_RANGE_16G)
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	86
+#else
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	86
+#endif	
+
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7
 

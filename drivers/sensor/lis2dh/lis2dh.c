@@ -379,6 +379,15 @@ int lis2dh_init(const struct device *dev)
 	}
 
 #if CONFIG_LIS2DH_WAKE_THS > 0 && CONFIG_LIS2DH_WAKE_DUR > 0
+	#if CONFIG_LIS2DH_WAKE_THS > LIS2DH_WAKE_THS_ABS_MAX
+		LOG_ERR("Wake Threshold exceeds maximum value of %i",
+		LIS2DH_WAKE_THS_ABS_MAX);
+		return -EINVAL;
+	#elif (CONFIG_LIS2DH_WAKE_THS > LIS2DH_WAKE_THS_RECOMM_MAX)
+		LOG_WRN("Wake Threshold exceeds recommended value of %i at ODR %i \
+threshold can probably never be reached", LIS2DH_WAKE_THS_RECOMM_MAX, LIS2DH_ODR_IDX);
+	#endif
+	
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_ACT_TH,
 					(uint8_t)CONFIG_LIS2DH_WAKE_THS);
 
@@ -396,7 +405,7 @@ int lis2dh_init(const struct device *dev)
 	}
 #elif CONFIG_LIS2DH_WAKE_THS < 0 || CONFIG_LIS2DH_WAKE_DUR < 0
 	LOG_ERR("CONFIG_LIS2DH_WAKE_THS or CONFIG_LIS2DH_WAKE_DUR was set \
-			to a negative value. Both values must be positive!");
+to a negative value. Both values must be positive!");
 	return -EINVAL;
 #elif (CONFIG_LIS2DH_WAKE_THS == 0 && CONFIG_LIS2DH_WAKE_DUR > 0) || \
 	(CONFIG_LIS2DH_WAKE_THS > 0 && CONFIG_LIS2DH_WAKE_DUR == 0)
