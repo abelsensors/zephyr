@@ -1,2 +1,0 @@
-ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc libsoc__arm__ti_lm3s6965.a  CMakeFiles/soc__arm__ti_lm3s6965.dir/soc.c.obj CMakeFiles/soc__arm__ti_lm3s6965.dir/soc_config.c.obj CMakeFiles/soc__arm__ti_lm3s6965.dir/reboot.S.obj CMakeFiles/soc__arm__ti_lm3s6965.dir/sys_arch_reboot.c.obj
-ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib libsoc__arm__ti_lm3s6965.a

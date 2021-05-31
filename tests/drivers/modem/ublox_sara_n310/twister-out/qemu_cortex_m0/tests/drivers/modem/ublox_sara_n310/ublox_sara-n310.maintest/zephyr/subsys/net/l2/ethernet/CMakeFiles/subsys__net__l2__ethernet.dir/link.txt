@@ -1,2 +1,0 @@
-ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc libsubsys__net__l2__ethernet.a  CMakeFiles/subsys__net__l2__ethernet.dir/ethernet.c.obj CMakeFiles/subsys__net__l2__ethernet.dir/arp.c.obj
-ccache /home/ilagas/zephyr-sdk-0.12.4/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib libsubsys__net__l2__ethernet.a
