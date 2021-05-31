@@ -124,9 +124,9 @@ static int lis2dh_freq_to_odr_val(uint16_t freq)
 	size_t i;
 
 	/* An ODR of 0 Hz is not allowed */
-	if (freq == 0U) {
-		return -EINVAL;
-	}
+	//if (freq == 0U) {
+	//	return -EINVAL;
+	//}
 
 	for (i = 0; i < ARRAY_SIZE(lis2dh_odr_map); i++) {
 		if (freq == lis2dh_odr_map[i]) {
@@ -147,10 +147,49 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 	odr = lis2dh_freq_to_odr_val(freq);
 	if (odr < 0) {
 		return odr;
+	}else if (odr == 0 && data->powered_down == false){
+		/* check if high resolution mode is enabled as it is not allowed to
+			enable low power mode when high resolution mode is enabled */
+#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
+		status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value & ~LIS2DH_POWER_DOWN);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+#endif
+		/* set ODR to 0, Enable Low Power and disable all axis */
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_POWER_DOWN);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+		data->powered_down = true;
+		return status;
+	/* re-enable the lis2dh */
+	}else if(odr > 0 && data->powered_down == true){
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
+		/* re-enable High resolution mode */
+		status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value | LIS2DH_HR_BIT);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+#endif
+		data->powered_down = false;
 	}
 
+
 	status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1, &value);
-	if (status < 0) {
+	if (unlikely(status < 0)) {
 		return status;
 	}
 

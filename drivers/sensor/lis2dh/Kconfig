@@ -138,6 +138,26 @@ config LIS2DH_ODR_9_LOW
 
 endchoice
 
+choice
+	prompt "High-pass filter mode"
+	default LIS2DH_HPM_OFF
+	help
+	  sample text
+
+config LIS2DH_HPM_OFF
+	bool "No filter"
+
+config LIS2DH_HPM_NORMAL
+	bool "Normal mode"
+
+config LIS2DH_HPM_REFERENCE
+	bool "Difference from reference register"
+
+config LIS2DH_HPM_INT_RESET
+	bool "Automatically reset on configured interrupt"
+
+endchoice
+
 config LIS2DH_WAKE_THS
 	int "Inertial Wake-Up threshold (0-127)"
 	default 0

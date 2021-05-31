@@ -49,6 +49,8 @@
 	#define LIS2DH_LP_EN_BIT	0
 #endif
 
+#define LIS2DH_POWER_DOWN		BIT(3)
+
 #define LIS2DH_ODR_1			1
 #define LIS2DH_ODR_2			2
 #define LIS2DH_ODR_3			3
@@ -88,15 +90,10 @@
 #define LIS2DH_HPIS1_EN_BIT		BIT(0)
 #define LIS2DH_HPIS2_EN_BIT		BIT(1)
 #define LIS2DH_FDS_EN_BIT		BIT(3)
-
+#define LIs2DH_HPCF1			BIT(4)
+#define LIs2DH_HPCF2			BIT(5)
 #define LIS2DH_HPM0				BIT(6)
 #define LIS2DH_HPM1				BIT(7)
-
-/* Temp for debugging, Turn this into KConfig */
-//#define CONFIG_LIS2DH_HPM_REFERENCE
-//#define CONFIG_LIS2DH_HPM_NORMAL
-//#define CONFIG_LIS2DH_HPM_INT_RESET
-/* end of temp */
 
 #if defined(CONFIG_LIS2DH_HPM_REFERENCE)
 	#define LIS2DH_HPM_BITS		LIS2DH_HPM0
@@ -247,6 +244,7 @@ struct lis2dh_data {
 	union lis2dh_sample sample;
 	/* current scaling factor, in micro m/s^2 / lsb */
 	uint32_t scale;
+	bool powered_down;
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct device *dev;

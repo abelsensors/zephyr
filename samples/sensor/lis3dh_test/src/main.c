@@ -105,7 +105,7 @@ void main(void)
 		return;
 	}
 
-	//ODR_set(sensor, 100);
+	ODR_set(sensor, (uint16_t)50);
 	//slope_TH_set(sensor, 2, 1);
 	//slope_DUR_set(sensor, 2);
 	
@@ -144,8 +144,12 @@ void main(void)
 
 		printf("Waiting for triggers\n");
 		while (true) {
+			ODR_set(sensor, (uint16_t)50);
 			k_sleep(K_MSEC(2000));
-			printf("[%u] - Waiting...\n\r", k_cycle_get_32());
+			printf("[%u] - Waiting...(0)\n\r", k_cycle_get_32());
+			ODR_set(sensor, (uint16_t)0);
+			k_sleep(K_MSEC(3000));
+			printf("[%u] - Waiting...(50)\n\r", k_cycle_get_32());
 		}
 	}
 #else /* CONFIG_LIS2DH_TRIGGER */
