@@ -1,12 +1,12 @@
 &i2c1 {
-    clock-frequency = <I2C_BITRATE_FAST>; 
+    clock-frequency = <I2C_BITRATE_STANDARD>; 
 	status = "okay";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
  
-	neo-m8: neo-m8@42 {
-		status = "okay";
-		compatible = "ublox,neo-m8";
-		label = "NEO_M8";
-		reg = <0x42>;
-	};
+	// neo-m8: neo-m8@42 {
+	// 	status = "okay";
+	// 	compatible = "ublox,neo-m8";
+	// 	label = "NEO_M8";
+	// 	reg = <0x42>;
+	// };
 };
