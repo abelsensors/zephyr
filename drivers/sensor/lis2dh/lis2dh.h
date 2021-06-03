@@ -136,6 +136,7 @@
 #define LIS2DH_REG_CTRL5		0x24
 #define LIS2DH_LIR_INT2_SHIFT		1
 #define LIS2DH_EN_LIR_INT2		BIT(LIS2DH_LIR_INT2_SHIFT)
+#define LIS2DH_REBOOT_BIT		BIT(7)
 
 #define LIS2DH_REG_CTRL6		0x25
 #define LIS2DH_EN_INT2_INT2_SHIFT	5
@@ -198,6 +199,14 @@ defined(CONFIG_LIS2DH_ACCEL_RANGE_4G))
 #else
 	#define LIS2DH_WAKE_THS_RECOMM_MAX	86
 #endif	
+
+/**
+ * @brief Reset a sensor
+ *
+ * @param dev Pointer to the sensor device
+ * @return 0 if successful, negative errno code if failure.
+ */
+int lis2dh_reset(const struct device *dev);
 
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7
@@ -305,6 +314,5 @@ int lis2dh_acc_slope_config(const struct device *dev,
 
 int lis2dh_spi_init(const struct device *dev);
 int lis2dh_i2c_init(const struct device *dev);
-
 
 #endif /* __SENSOR_LIS2DH__ */

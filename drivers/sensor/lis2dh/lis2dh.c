@@ -300,51 +300,12 @@ static const struct sensor_driver_api lis2dh_driver_api = {
 	.channel_get = lis2dh_channel_get,
 };
 
-int lis2dh_init(const struct device *dev)
+int lis2dh_reg_init(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
 	int status;
-	uint8_t id;
 	uint8_t raw[6];
-
-	lis2dh->bus = device_get_binding(cfg->bus_name);
-	if (!lis2dh->bus) {
-		LOG_ERR("master not found: %s", cfg->bus_name);
-		return -EINVAL;
-	}
-
-	cfg->bus_init(dev);
-
-	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
-	if (status < 0) {
-		LOG_ERR("Failed to read chip id.");
-		return status;
-	}
-
-	if (id != LIS2DH_CHIP_ID) {
-		LOG_ERR("Invalid chip ID: %02x\n", id);
-		return -EINVAL;
-	}
-
-	/* Fix LSM303AGR_ACCEL device scale values */
-	if (cfg->is_lsm303agr_dev) {
-		lis2dh_reg_val_to_scale[0] = ACCEL_SCALE(1563);
-		lis2dh_reg_val_to_scale[1] = ACCEL_SCALE(3126);
-		lis2dh_reg_val_to_scale[2] = ACCEL_SCALE(6252);
-		lis2dh_reg_val_to_scale[3] = ACCEL_SCALE(18758);
-	}
-
-	if (cfg->disc_pull_up) {
-		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
-						   LIS2DH_SDO_PU_DISC_MASK,
-						   LIS2DH_SDO_PU_DISC_MASK);
-		if (status < 0) {
-			LOG_ERR("Failed to disconnect SDO/SA0 pull-up.");
-			return status;
-		}
-	}
-
 	/* Initialize control register ctrl1 to ctrl 6 to default boot values
 	 * to avoid warm start/reset issues as the accelerometer has no reset
 	 * pin. Register values are retained if power is not removed.
@@ -414,12 +375,6 @@ to a negative value. Both values must be positive!");
 	return -EINVAL;
 #endif
 
-	/* For debugging purposes */
-	uint8_t reg2;
-	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL2, &reg2);
-	LOG_INF("HMP1=%X and %X", reg2, (uint8_t)LIS2DH_HPM_BITS);
-	/* End of debugging purposes */
-
 #ifdef CONFIG_LIS2DH_TRIGGER
 	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {
 		status = lis2dh_init_interrupt(dev);
@@ -439,6 +394,70 @@ to a negative value. Both values must be positive!");
 					LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT |
 					LIS2DH_ODR_BITS);
 }
+
+int lis2dh_init(const struct device *dev)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	const struct lis2dh_config *cfg = dev->config;
+	int status;
+	uint8_t id;
+
+	lis2dh->bus = device_get_binding(cfg->bus_name);
+	if (!lis2dh->bus) {
+		LOG_ERR("master not found: %s", cfg->bus_name);
+		return -EINVAL;
+	}
+
+	cfg->bus_init(dev);
+
+	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
+	if (status < 0) {
+		LOG_ERR("Failed to read chip id.");
+		return status;
+	}
+
+	if (id != LIS2DH_CHIP_ID) {
+		LOG_ERR("Invalid chip ID: %02x\n", id);
+		return -EINVAL;
+	}
+
+	/* Fix LSM303AGR_ACCEL device scale values */
+	if (cfg->is_lsm303agr_dev) {
+		lis2dh_reg_val_to_scale[0] = ACCEL_SCALE(1563);
+		lis2dh_reg_val_to_scale[1] = ACCEL_SCALE(3126);
+		lis2dh_reg_val_to_scale[2] = ACCEL_SCALE(6252);
+		lis2dh_reg_val_to_scale[3] = ACCEL_SCALE(18758);
+	}
+
+	if (cfg->disc_pull_up) {
+		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
+						   LIS2DH_SDO_PU_DISC_MASK,
+						   LIS2DH_SDO_PU_DISC_MASK);
+		if (status < 0) {
+			LOG_ERR("Failed to disconnect SDO/SA0 pull-up.");
+			return status;
+		}
+	}
+	return lis2dh_reg_init(dev);
+}
+
+int lis2dh_reset(const struct device *dev)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	int status;
+
+	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
+					(uint8_t)LIS2DH_REBOOT_BIT);
+	if (unlikely(status < 0)) {
+		LOG_ERR("Failed to reset Lis2dh");
+		return status;
+	}
+
+	LOG_INF("Lis2dh has been reset, reinitialising...");
+
+	return lis2dh_reg_init(dev);
+}
+
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "LIS2DH driver enabled without any devices"

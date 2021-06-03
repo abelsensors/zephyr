@@ -9,6 +9,8 @@
 #include <device.h>
 #include <drivers/sensor.h>
 
+int lis2dh_reset(const struct device *dev);
+
 static void fetch_and_display(const struct device *sensor)
 {
 	static unsigned int count;
@@ -52,8 +54,10 @@ void ODR_set(const struct device *sensor, uint16_t val1){
 	);
 	if(unlikely(status < 0)){
 		printf("Failed to set ODR (%u) with erno: %i\n", ODR_value.val1, status);
+	} else if(ODR_value.val1 == 0){
+		printf("\033[1;34mSet ODR to \033[1;35m0\033[1;36m (power-down)\033[0m\n");
 	} else {
-		printf("Set ODR to %u\n", ODR_value.val1);
+		printf("\033[1;34mSet ODR to \033[1;35m%u\033[0m\n", ODR_value.val1);
 	}
 	
 }
@@ -114,6 +118,7 @@ void main(void)
 	{
 		struct sensor_trigger trig;
 		int rc;
+		int status;
 
 		trig.type = SENSOR_TRIG_DATA_READY;
 		//trig.type = SENSOR_TRIG_DELTA;
@@ -143,18 +148,31 @@ void main(void)
 		}
 
 		printf("Waiting for triggers\n");
+
 		while (true) {
-			ODR_set(sensor, (uint16_t)50);
-			k_sleep(K_MSEC(2000));
-			printf("[%u] - Waiting...(0)\n\r", k_cycle_get_32());
-			ODR_set(sensor, (uint16_t)0);
-			k_sleep(K_MSEC(3000));
-			printf("[%u] - Waiting...(50)\n\r", k_cycle_get_32());
+			ODR_set(sensor, (uint16_t)50);						//set ODR to 50
+			k_sleep(K_MSEC(1500));
+			ODR_set(sensor, (uint16_t)0);						//set ODR to 0 (power-down)
+			k_sleep(K_MSEC(1500));
+			ODR_set(sensor, (uint16_t)50);						//set ODR to 50
+			k_sleep(K_MSEC(1500));
+
+			status = lis2dh_reset(sensor);						//reset all lis3dh registers to defaults
+			if (unlikely(status < 0)) {
+				printf("Failed to reset sensor: %d\n", status);
+				return;
+			}
+
+			rc = sensor_trigger_set(sensor, &trig, trigger_handler);	//configure data ready interrupt
+			if (unlikely(rc < 0)) {
+				printf("Failed to set trigger: %d\n", rc);
+				return;
+			}
+			k_sleep(K_MSEC(100));
 		}
 	}
 #else /* CONFIG_LIS2DH_TRIGGER */
 	printf("Polling at 10 Hz\n");
-
 	while (true) {
 		fetch_and_display(sensor);
 		k_sleep(K_MSEC(100));
