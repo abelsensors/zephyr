@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>
+#include <drivers/sensor/lis2dh.h>
 #include <string.h>
 
 #define LIS2DH_REG_WAI			0x0f
@@ -182,7 +183,7 @@
 #define LIS2DH_REG_INT1_DUR		0x33
 #define LIS2DH_REG_INT2_DUR		0x37
 
-#define LIS2DH_REG_ACT_TH		0x3E
+#define LIS2DH_REG_ACT_THS		0x3E
 #define LIS2DH_REG_ACT_DUR		0x3F
 
 #define LIS2DH_WAKE_THS_ABS_MAX	127
@@ -199,14 +200,6 @@ defined(CONFIG_LIS2DH_ACCEL_RANGE_4G))
 #else
 	#define LIS2DH_WAKE_THS_RECOMM_MAX	86
 #endif	
-
-/**
- * @brief Reset a sensor
- *
- * @param dev Pointer to the sensor device
- * @return 0 if successful, negative errno code if failure.
- */
-int lis2dh_reset(const struct device *dev);
 
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7
@@ -269,6 +262,7 @@ struct lis2dh_data {
 	/* current scaling factor, in micro m/s^2 / lsb */
 	uint32_t scale;
 	bool powered_down;
+	uint8_t target_odr;
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct device *dev;
@@ -314,5 +308,6 @@ int lis2dh_acc_slope_config(const struct device *dev,
 
 int lis2dh_spi_init(const struct device *dev);
 int lis2dh_i2c_init(const struct device *dev);
+
 
 #endif /* __SENSOR_LIS2DH__ */

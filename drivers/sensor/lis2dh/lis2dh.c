@@ -95,7 +95,7 @@ static int lis2dh_sample_fetch(const struct device *dev,
 	status = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_STATUS,
 					  lis2dh->sample.raw,
 					  sizeof(lis2dh->sample.raw));
-	if (status < 0) {
+	if (unlikely(status < 0)) {
 		LOG_WRN("Could not read accel axis data");
 		return status;
 	}
@@ -124,16 +124,16 @@ static int lis2dh_freq_to_odr_val(uint16_t freq)
 	size_t i;
 
 	/* An ODR of 0 Hz is not allowed */
-	//if (freq == 0U) {
-	//	return -EINVAL;
-	//}
+	if (freq == 0U) {
+		LOG_ERR("An ODR of 0 Hz is not allowed, use lis2dh_power_down() instead");
+		return -EINVAL;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(lis2dh_odr_map); i++) {
 		if (freq == lis2dh_odr_map[i]) {
 			return i;
 		}
 	}
-
 	return -EINVAL;
 }
 
@@ -145,46 +145,8 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 	struct lis2dh_data *data = dev->data;
 
 	odr = lis2dh_freq_to_odr_val(freq);
-	if (odr < 0) {
+	if (unlikely(odr < 0)) {
 		return odr;
-	}else if (odr == 0 && data->powered_down == false){
-		/* check if high resolution mode is enabled as it is not allowed to
-			enable low power mode when high resolution mode is enabled */
-#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-		status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
-		if (unlikely(status < 0)) {
-			return status;
-		}
-		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value & ~LIS2DH_POWER_DOWN);
-		if (unlikely(status < 0)) {
-			return status;
-		}
-#endif
-		/* set ODR to 0, Enable Low Power and disable all axis */
-		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_POWER_DOWN);
-		if (unlikely(status < 0)) {
-			return status;
-		}
-		data->powered_down = true;
-		return status;
-	/* re-enable the lis2dh */
-	}else if(odr > 0 && data->powered_down == true){
-		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT);
-		if (unlikely(status < 0)) {
-			return status;
-		}
-#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-		/* re-enable High resolution mode */
-		status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
-		if (unlikely(status < 0)) {
-			return status;
-		}
-		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value | LIS2DH_HR_BIT);
-		if (unlikely(status < 0)) {
-			return status;
-		}
-#endif
-		data->powered_down = false;
 	}
 
 
@@ -204,11 +166,93 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 		odr--;
 	}
 
+	/* store last set freq value so it can be restored */
+	if (freq != data->target_odr) {
+		data->target_odr = odr;
+		LOG_DBG("set target odr to %i", data->target_odr);
+	}
+
+	/* If sensor is powered down only set the target frequency 
+	 * but don't apply it to hardware, re-enabling the sensor
+	 * with lis2dh_power_down() will do that.
+	 */
+	if (data->powered_down == true) {
+		return 0;
+	}
+
 	return data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 				      (value & ~LIS2DH_ODR_MASK) |
 				      LIS2DH_ODR_RATE(odr));
 }
 #endif
+
+int lis2dh_power_down(const struct device *dev, bool power_down)
+{
+	struct lis2dh_data *data = dev->data;
+	int status;
+#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
+	uint8_t value;
+#endif
+
+	if (power_down == true && data->powered_down == false) {
+		/* check if high resolution mode is enabled as it is not allowed to
+			enable low power mode when high resolution mode is enabled */
+#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
+		status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value & ~LIS2DH_POWER_DOWN);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+#endif
+		/* set ODR to 0, Enable Low Power and disable all axis */
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_POWER_DOWN);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+		data->powered_down = true;
+		LOG_DBG("powered down sensor succesfully");
+		return status;
+
+	} else if (power_down == true && data->powered_down == true) {
+		LOG_WRN("sensor already powered down");
+		return 0;
+
+	/* re-enable the lis2dh */
+	} else if (power_down == false && data->powered_down == true) {
+#if defined(CONFIG_LIS2DH_ODR_RUNTIME) /* use stored target_odr value */
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_ACCEL_EN_BITS |\
+											 LIS2DH_LP_EN_BIT |  LIS2DH_ODR_RATE(data->target_odr));
+#else /* use odr set in kconfig */
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_ACCEL_EN_BITS |\
+											 LIS2DH_LP_EN_BIT | LIS2DH_ODR_BITS);
+#endif											
+		if (unlikely(status < 0)) {
+			return status;
+		}
+#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
+		/* re-enable High resolution mode */
+		status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value | LIS2DH_HR_BIT);
+		if (unlikely(status < 0)) {
+			return status;
+		}
+#endif
+		LOG_DBG("Sensor exited powered down mode succesfully");
+		data->powered_down = false;
+		return status;
+
+	} else {
+		LOG_WRN("sensor is not powered down");
+		return 0;
+	}
+}
 
 #ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
 
@@ -246,12 +290,64 @@ static int lis2dh_acc_range_set(const struct device *dev, int32_t range)
 }
 #endif
 
+int lis2dh_acc_act_config(const struct device *dev,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	int status;
+
+	if ((uint16_t)attr == SENSOR_ATTR_LIS2DH_ACT_TH) {
+		uint8_t range_g, reg_val;
+		uint32_t act_th_ums2;
+
+		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4,
+						 &reg_val);
+		if (status < 0) {
+			return status;
+		}
+
+		/* fs reg value is in the range 0 (2g) - 3 (16g) */
+		range_g = 2 * (1 << ((LIS2DH_FS_MASK & reg_val)
+				      >> LIS2DH_FS_SHIFT));
+
+		act_th_ums2 = val->val1 * 1000000 + val->val2;
+
+		/* make sure the provided threshold does not exceed range */
+		if ((act_th_ums2 - 1) > (range_g * SENSOR_G)) {
+			return -EINVAL;
+		}
+
+		/* 7 bit full range value */
+		reg_val = 128 / range_g * (act_th_ums2 - 1) / SENSOR_G;
+
+		LOG_INF("act_ths=0x%x range_g=%d ums2=%u", reg_val,
+			    range_g, act_th_ums2 - 1);
+
+		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_ACT_THS,
+						  reg_val);
+	} else { /* SENSOR_ATTR_LIS2DH_ACT_DUR */
+		/*
+		 * slope duration is measured in number of samples:
+		 * N/ODR where N is the register value
+		 */
+		if (val->val1 < 0 || val->val1 > 127) {
+			return -ENOTSUP;
+		}
+
+		LOG_INF("act_dur=0x%x", val->val1);
+
+		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_ACT_DUR,
+						  val->val1);
+	}
+}
+
 static int lis2dh_acc_config(const struct device *dev,
 			     enum sensor_channel chan,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
 {
-	switch (attr) {
+	switch ((uint16_t)attr) {
 #ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
 		return lis2dh_acc_range_set(dev, sensor_ms2_to_g(val));
@@ -265,6 +361,9 @@ static int lis2dh_acc_config(const struct device *dev,
 	case SENSOR_ATTR_SLOPE_DUR:
 		return lis2dh_acc_slope_config(dev, attr, val);
 #endif
+	case SENSOR_ATTR_LIS2DH_ACT_TH:
+	case SENSOR_ATTR_LIS2DH_ACT_DUR:
+		return lis2dh_acc_act_config(dev, attr, val);
 	default:
 		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
@@ -305,20 +404,29 @@ int lis2dh_reg_init(const struct device *dev)
 	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
 	int status;
-	uint8_t raw[6];
+	uint8_t ctrl_raw[6];
+	uint8_t act_raw[2];
 	/* Initialize control register ctrl1 to ctrl 6 to default boot values
 	 * to avoid warm start/reset issues as the accelerometer has no reset
 	 * pin. Register values are retained if power is not removed.
 	 * Default values see LIS2DH documentation page 30, chapter 6.
-	 */
-	(void)memset(raw, 0, sizeof(raw));
-	raw[0] = LIS2DH_ACCEL_EN_BITS;
+	 */ 
+	(void)memset(ctrl_raw, 0, sizeof(ctrl_raw));
+	ctrl_raw[0] = LIS2DH_ACCEL_EN_BITS;
 
-	status = lis2dh->hw_tf->write_data(dev, LIS2DH_REG_CTRL1, raw,
-						sizeof(raw));
-
-	if (status < 0) {
+	status = lis2dh->hw_tf->write_data(dev, LIS2DH_REG_CTRL1, ctrl_raw,
+						sizeof(ctrl_raw));
+	if (unlikely(status < 0)) {
 		LOG_ERR("Failed to reset ctrl registers.");
+		return status;
+	}
+
+	/* Reset ACT registers */
+	(void)memset(act_raw, 0, sizeof(act_raw));
+	status = lis2dh->hw_tf->write_data(dev, LIS2DH_REG_ACT_THS, act_raw,
+						sizeof(act_raw));
+	if (unlikely(status < 0)) {
+		LOG_ERR("Failed to reset ACT registers.");
 		return status;
 	}
 
@@ -326,7 +434,7 @@ int lis2dh_reg_init(const struct device *dev)
 	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4,
 					LIS2DH_FS_BITS | LIS2DH_HR_BIT);
-	if (status < 0) {
+	if (unlikely(status < 0)) {
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
 	}
@@ -334,51 +442,15 @@ int lis2dh_reg_init(const struct device *dev)
 	/* set High-pass filter mode */
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL2,
 					(uint8_t)LIS2DH_HPM_BITS);
-	if (status < 0) {
+	if (unlikely(status < 0)) {
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
 	}
 
-#if CONFIG_LIS2DH_WAKE_THS > 0 && CONFIG_LIS2DH_WAKE_DUR > 0
-	#if CONFIG_LIS2DH_WAKE_THS > LIS2DH_WAKE_THS_ABS_MAX
-		LOG_ERR("Wake Threshold exceeds maximum value of %i",
-		LIS2DH_WAKE_THS_ABS_MAX);
-		return -EINVAL;
-	#elif (CONFIG_LIS2DH_WAKE_THS > LIS2DH_WAKE_THS_RECOMM_MAX)
-		LOG_WRN("Wake Threshold exceeds recommended value of %i at ODR %i \
-threshold can probably never be reached", LIS2DH_WAKE_THS_RECOMM_MAX, LIS2DH_ODR_IDX);
-	#endif
-	
-	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_ACT_TH,
-					(uint8_t)CONFIG_LIS2DH_WAKE_THS);
-
-	if (unlikely(status < 0)) {
-		LOG_ERR("Failed to set Inertial Wake-Up threshold register.");
-		return status;
-	}
-
-	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_ACT_DUR,
-					(uint8_t)CONFIG_LIS2DH_WAKE_DUR);
-
-	if (unlikely(status < 0)) {
-		LOG_ERR("Failed to set Inertial Wake-Up duration register.");
-		return status;
-	}
-#elif CONFIG_LIS2DH_WAKE_THS < 0 || CONFIG_LIS2DH_WAKE_DUR < 0
-	LOG_ERR("CONFIG_LIS2DH_WAKE_THS or CONFIG_LIS2DH_WAKE_DUR was set \
-to a negative value. Both values must be positive!");
-	return -EINVAL;
-#elif (CONFIG_LIS2DH_WAKE_THS == 0 && CONFIG_LIS2DH_WAKE_DUR > 0) || \
-	(CONFIG_LIS2DH_WAKE_THS > 0 && CONFIG_LIS2DH_WAKE_DUR == 0)
-	LOG_ERR("CONFIG_LIS2DH_WAKE_THS or CONFIG_LIS2DH_WAKE_DUR was set \
-			without the other. Both values need to be set!");
-	return -EINVAL;
-#endif
-
 #ifdef CONFIG_LIS2DH_TRIGGER
 	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {
 		status = lis2dh_init_interrupt(dev);
-		if (status < 0) {
+		if (unlikely(status < 0)) {
 			LOG_ERR("Failed to initialize interrupts.");
 			return status;
 		}
@@ -411,7 +483,7 @@ int lis2dh_init(const struct device *dev)
 	cfg->bus_init(dev);
 
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
-	if (status < 0) {
+	if (unlikely(status < 0)) {
 		LOG_ERR("Failed to read chip id.");
 		return status;
 	}
@@ -453,7 +525,7 @@ int lis2dh_reset(const struct device *dev)
 		return status;
 	}
 
-	LOG_INF("Lis2dh has been reset, reinitialising...");
+	LOG_DBG("Lis2dh has been reset, reinitialising...");
 
 	return lis2dh_reg_init(dev);
 }

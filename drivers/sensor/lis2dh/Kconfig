@@ -158,21 +158,4 @@ config LIS2DH_HPM_INT_RESET
 
 endchoice
 
-config LIS2DH_WAKE_THS
-	int "Inertial Wake-Up threshold (0-127)"
-	default 0
-	help
-	  7-bit Sleep to wake, return to Sleep activation threshold in Low power mode
-	  1LSb = 16mg @ FS=2g
-	  1LSb = 32mg @ FS=4g
-	  1LSb = 62mg @ FS=8g
-	  1LSb = 186mg @ FS=16g
-
-config LIS2DH_WAKE_DUR
-	int "Inertial Wake-Up duration (0-256)"
-	default 0
-	help
-	  8-bit Sleep to Wake, Return to Sleep duration
-	  1LSb = (8*1[LSb]+1)/ODR	
-
 endif # LIS2DH

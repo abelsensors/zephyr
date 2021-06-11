@@ -8,8 +8,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/sensor.h>
-
-int lis2dh_reset(const struct device *dev);
+#include <drivers/sensor/lis2dh.h>
 
 static void fetch_and_display(const struct device *sensor)
 {
@@ -79,7 +78,7 @@ void slope_TH_set(const struct device *sensor, uint16_t val1, uint16_t val2){
 }
 
 void slope_DUR_set(const struct device *sensor, uint8_t val1){
-	const struct sensor_value slope_DUR_value = {(uint16_t)val1, 0};
+	const struct sensor_value slope_DUR_value = {val1, 0};
 	
 	int status = sensor_attr_set(sensor,
 		SENSOR_CHAN_ACCEL_XYZ,
@@ -99,6 +98,34 @@ static void trigger_handler(const struct device *dev,
 }
 #endif
 
+void act_TH_set(const struct device *sensor, uint16_t val1, uint16_t val2){
+	const struct sensor_value act_TH_value = {val1, val2};
+	
+	int status = sensor_attr_set(sensor,
+		SENSOR_CHAN_ACCEL_XYZ,
+		SENSOR_ATTR_LIS2DH_ACT_TH,
+		&act_TH_value
+	);
+
+	if(status < 0){
+		printf("Failed to set ACT_TH (%u) with erno: %i", act_TH_value.val1, status);
+	}
+}
+
+void act_DUR_set(const struct device *sensor, uint16_t val1){
+	const struct sensor_value act_DUR_value = {val1, 0};
+	
+	int status = sensor_attr_set(sensor,
+		SENSOR_CHAN_ACCEL_XYZ,
+		SENSOR_ATTR_LIS2DH_ACT_DUR,
+		&act_DUR_value
+	);
+
+	if(status < 0){
+		printf("Failed to set ACT_DUR (%u) with erno: %i", act_DUR_value.val1, status);
+	}
+}
+
 void main(void)
 {
 	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
@@ -109,37 +136,17 @@ void main(void)
 		return;
 	}
 
+	act_TH_set(sensor, 8, 0);
+	act_DUR_set(sensor, 1);
 	ODR_set(sensor, (uint16_t)50);
-	//slope_TH_set(sensor, 2, 1);
-	//slope_DUR_set(sensor, 2);
-	
 
 #if CONFIG_LIS2DH_TRIGGER
 	{
 		struct sensor_trigger trig;
 		int rc;
-		int status;
 
 		trig.type = SENSOR_TRIG_DATA_READY;
-		//trig.type = SENSOR_TRIG_DELTA;
 		trig.chan = SENSOR_CHAN_ACCEL_XYZ;
-
-		/*
-		if (IS_ENABLED(CONFIG_LIS2DH_ODR_RUNTIME)) {
-			struct sensor_value odr = {
-				.val1 = 1,
-			};
-
-			rc = sensor_attr_set(sensor, trig.chan,
-					     SENSOR_ATTR_SAMPLING_FREQUENCY,
-					     &odr);
-			if (rc != 0) {
-				printf("Failed to set odr: %d\n", rc);
-				return;
-			}
-			printf("Sampling at %u Hz\n", odr.val1);
-		}
-		*/
 
 		rc = sensor_trigger_set(sensor, &trig, trigger_handler);
 		if (rc != 0) {
@@ -147,28 +154,19 @@ void main(void)
 			return;
 		}
 
+		slope_TH_set(sensor, 8, 0);
+		slope_DUR_set(sensor, 1);
+
 		printf("Waiting for triggers\n");
 
 		while (true) {
-			ODR_set(sensor, (uint16_t)50);						//set ODR to 50
-			k_sleep(K_MSEC(1500));
-			ODR_set(sensor, (uint16_t)0);						//set ODR to 0 (power-down)
-			k_sleep(K_MSEC(1500));
-			ODR_set(sensor, (uint16_t)50);						//set ODR to 50
-			k_sleep(K_MSEC(1500));
+			/* power down the sensor */
+			lis2dh_power_down(sensor, true);
+			k_sleep(K_MSEC(1000));
 
-			status = lis2dh_reset(sensor);						//reset all lis3dh registers to defaults
-			if (unlikely(status < 0)) {
-				printf("Failed to reset sensor: %d\n", status);
-				return;
-			}
-
-			rc = sensor_trigger_set(sensor, &trig, trigger_handler);	//configure data ready interrupt
-			if (unlikely(rc < 0)) {
-				printf("Failed to set trigger: %d\n", rc);
-				return;
-			}
-			k_sleep(K_MSEC(100));
+			/* re-enable the sensor */
+			lis2dh_power_down(sensor, false);
+			k_sleep(K_MSEC(1000));
 		}
 	}
 #else /* CONFIG_LIS2DH_TRIGGER */
