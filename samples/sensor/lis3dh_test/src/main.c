@@ -161,11 +161,25 @@ void main(void)
 
 		while (true) {
 			/* power down the sensor */
-			lis2dh_power_down(sensor, true);
+			lis2dh_power_down_set(sensor, true);
+			k_sleep(K_MSEC(500));
+#if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
+			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, false);
 			k_sleep(K_MSEC(1000));
-
+#endif
 			/* re-enable the sensor */
-			lis2dh_power_down(sensor, false);
+			lis2dh_power_down_set(sensor, false);
+#if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
+			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, false);
+			k_sleep(K_MSEC(1000));
+			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, true);
+			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Y, false);
+			k_sleep(K_MSEC(1000));
+			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Y, true);
+			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Z, false);
+			k_sleep(K_MSEC(1000));
+			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Z, true);
+#endif
 			k_sleep(K_MSEC(1000));
 		}
 	}

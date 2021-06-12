@@ -176,7 +176,8 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 	 * but don't apply it to hardware, re-enabling the sensor
 	 * with lis2dh_power_down() will do that.
 	 */
-	if (data->powered_down == true) {
+	if (data->powered_down) {
+		LOG_INF("New ODR value will be applied once the sensor leaves power down mode.");
 		return 0;
 	}
 
@@ -186,7 +187,7 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 }
 #endif
 
-int lis2dh_power_down(const struct device *dev, bool power_down)
+int lis2dh_power_down_set(const struct device *dev, bool power_down)
 {
 	struct lis2dh_data *data = dev->data;
 	int status;
@@ -222,16 +223,32 @@ int lis2dh_power_down(const struct device *dev, bool power_down)
 
 	/* re-enable the lis2dh */
 	} else if (power_down == false && data->powered_down == true) {
-#if defined(CONFIG_LIS2DH_ODR_RUNTIME) /* use stored target_odr value */
-		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_ACCEL_EN_BITS |\
-											 LIS2DH_LP_EN_BIT |  LIS2DH_ODR_RATE(data->target_odr));
-#else /* use odr set in kconfig */
-		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_ACCEL_EN_BITS |\
-											 LIS2DH_LP_EN_BIT | LIS2DH_ODR_BITS);
-#endif											
+		uint8_t axes = 0;
+#if defined(CONFIG_LIS2DH_AXES_RUNTIME)
+		if (data->target_X_axis) {
+			axes = axes | (uint8_t)LIS2DH_ACCEL_X_EN_BIT;
+		}
+		if (data->target_Y_axis) {
+			axes = axes | (uint8_t)LIS2DH_ACCEL_Y_EN_BIT;
+		}
+		if (data->target_Z_axis) {
+			axes = axes | (uint8_t)LIS2DH_ACCEL_Z_EN_BIT;
+		}
+#else
+		axes = (uint8_t)LIS2DH_ACCEL_EN_BITS;
+#endif /* CONFIG_LIS2DH_AXES_RUNTIME */
+
+#if defined(CONFIG_LIS2DH_ODR_RUNTIME)
+		uint8_t odr = (uint8_t)LIS2DH_ODR_RATE(data->target_odr);
+#else
+		uint8_t odr = (uint8_t)LIS2DH_ODR_BITS;
+#endif /* CONFIG_LIS2DH_ODR_RUNTIME */
+		status = data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, axes |\
+											 LIS2DH_LP_EN_BIT | odr);									
 		if (unlikely(status < 0)) {
 			return status;
 		}
+
 #if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
 		/* re-enable High resolution mode */
 		status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
@@ -252,6 +269,11 @@ int lis2dh_power_down(const struct device *dev, bool power_down)
 		LOG_WRN("sensor is not powered down");
 		return 0;
 	}
+}
+
+bool lis2dh_power_down_get(const struct device *dev) {
+	struct lis2dh_data *lis2dh = dev->data;
+	return lis2dh->powered_down;
 }
 
 #ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
@@ -372,6 +394,152 @@ static int lis2dh_acc_config(const struct device *dev,
 	return 0;
 }
 
+#if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
+int lis2dh_axis_set(const struct device *dev, enum sensor_channel chan, bool enable)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+		if (enable) {
+			lis2dh->target_X_axis = true;
+			if (lis2dh->powered_down) {
+				goto lis2dh_axis_end;
+			} else {
+				LOG_INF("Enabled X axis");
+				return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+											 (uint8_t)LIS2DH_ACCEL_X_EN_BIT,
+											 (uint8_t)LIS2DH_ACCEL_X_EN_BIT);
+			}
+		} else { /* disable */
+			lis2dh->target_X_axis = false;
+			if (lis2dh->powered_down) {
+				goto lis2dh_axis_end;
+			} else {
+				LOG_INF("Disabled X axis");
+				return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+											 (uint8_t)LIS2DH_ACCEL_X_EN_BIT,
+											~(uint8_t)LIS2DH_ACCEL_X_EN_BIT);
+			}
+		}
+	case SENSOR_CHAN_ACCEL_Y:
+		if (enable) {
+			lis2dh->target_Y_axis = true;
+			if (lis2dh->powered_down) {
+				goto lis2dh_axis_end;
+			} else {
+				LOG_INF("Enabled Y axis");
+				return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+											 (uint8_t)LIS2DH_ACCEL_Y_EN_BIT,
+											 (uint8_t)LIS2DH_ACCEL_Y_EN_BIT);
+			}
+		} else { /* disable */
+			lis2dh->target_Y_axis = false;
+			if (lis2dh->powered_down) {
+				goto lis2dh_axis_end;
+			} else {
+				LOG_INF("Disabled Y axis");
+				return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+											 (uint8_t)LIS2DH_ACCEL_Y_EN_BIT,
+											~(uint8_t)LIS2DH_ACCEL_Y_EN_BIT);
+			}
+		}
+	case SENSOR_CHAN_ACCEL_Z:
+		if (enable) {
+			lis2dh->target_Z_axis = true;
+			if (lis2dh->powered_down) {
+				goto lis2dh_axis_end;
+			} else {
+				LOG_INF("Enabled Z axis");
+				return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+											 (uint8_t)LIS2DH_ACCEL_Z_EN_BIT,
+											 (uint8_t)LIS2DH_ACCEL_Z_EN_BIT);
+			}
+		} else { /* disable */
+			lis2dh->target_Z_axis = false;
+			if (lis2dh->powered_down) {
+				goto lis2dh_axis_end;
+			} else {
+				LOG_INF("Disabled Z axis");
+				return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+											 (uint8_t)LIS2DH_ACCEL_Z_EN_BIT,
+											~(uint8_t)LIS2DH_ACCEL_Z_EN_BIT);
+			}
+		}
+	case SENSOR_CHAN_ACCEL_XYZ:
+		if (enable) {
+			lis2dh->target_X_axis = true;
+			lis2dh->target_Y_axis = true;
+			lis2dh->target_Z_axis = true;
+			if (lis2dh->powered_down) {
+				goto lis2dh_axis_end;
+			} else {
+				LOG_INF("Enabled X, Y and Z axes");
+				return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+											 (uint8_t)LIS2DH_ACCEL_XYZ_BITS,
+											 (uint8_t)LIS2DH_ACCEL_XYZ_BITS);
+			}
+		} else { /* disable */
+			lis2dh->target_X_axis = false;
+			lis2dh->target_Y_axis = false;
+			lis2dh->target_Z_axis = false;
+			if (lis2dh->powered_down) {
+				goto lis2dh_axis_end;
+			} else {
+				LOG_INF("Disabled X, Y and Z axes");
+				return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+											 (uint8_t)LIS2DH_ACCEL_XYZ_BITS,
+											~(uint8_t)LIS2DH_ACCEL_XYZ_BITS);
+			}
+		}
+	default:
+		LOG_WRN("lis2dh_axis_set() not supported on this channel.");
+		return -ENOTSUP;
+	}
+	lis2dh_axis_end:
+	LOG_INF("New axis settings will be applied once the sensor leaves power down mode.");
+	return 0;
+}
+
+bool lis2dh_axis_get(const struct device *dev, enum sensor_channel chan)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	uint8_t value;
+	int status;
+
+	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1, &value);
+	if (unlikely(status < 0)) {
+		return status;
+	}
+
+	switch (chan) {
+		case SENSOR_CHAN_ACCEL_X:
+			if (value & LIS2DH_ACCEL_X_EN_BIT) {
+				return true;
+			} else {
+				return false;
+			}
+		case SENSOR_CHAN_ACCEL_Y:
+		if (value & LIS2DH_ACCEL_Y_EN_BIT) {
+				return true;
+			} else {
+				return false;
+			}
+		case SENSOR_CHAN_ACCEL_Z:
+			if (value & LIS2DH_ACCEL_Z_EN_BIT) {
+				return true;
+			} else {
+				return false;
+			}
+		case SENSOR_CHAN_ACCEL_XYZ:
+			LOG_WRN("lis2dh_axis_get() can't read multiple axes simultaniously.");
+			return -ENOTSUP;
+		default:
+			LOG_WRN("lis2dh_axis_get() not supported on this channel.");
+			return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_LIS2DH_AXES_RUNTIME */
+
 static int lis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
@@ -434,14 +602,6 @@ int lis2dh_reg_init(const struct device *dev)
 	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4,
 					LIS2DH_FS_BITS | LIS2DH_HR_BIT);
-	if (unlikely(status < 0)) {
-		LOG_ERR("Failed to set full scale ctrl register.");
-		return status;
-	}
-
-	/* set High-pass filter mode */
-	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL2,
-					(uint8_t)LIS2DH_HPM_BITS);
 	if (unlikely(status < 0)) {
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
@@ -510,6 +670,13 @@ int lis2dh_init(const struct device *dev)
 			return status;
 		}
 	}
+
+#if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
+	lis2dh->target_X_axis = true;
+	lis2dh->target_Y_axis = true;
+	lis2dh->target_Z_axis = true;
+#endif
+
 	return lis2dh_reg_init(dev);
 }
 

@@ -38,9 +38,32 @@
 #define LIS2DH_ACCEL_X_EN_BIT		BIT(0)
 #define LIS2DH_ACCEL_Y_EN_BIT		BIT(1)
 #define LIS2DH_ACCEL_Z_EN_BIT		BIT(2)
-#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
-					LIS2DH_ACCEL_Y_EN_BIT | \
-					LIS2DH_ACCEL_Z_EN_BIT)
+#if defined(CONFIG_LIS2DH_AXES_RUNTIME)
+	#define LIS2DH_ACCEL_XYZ_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
+										 LIS2DH_ACCEL_Y_EN_BIT | \
+										 LIS2DH_ACCEL_Z_EN_BIT)
+#endif
+#if defined(CONFIG_LIS2DH_AXES_X)
+	#define LIS2DH_ACCEL_EN_BITS		 LIS2DH_ACCEL_X_EN_BIT
+#elif defined(CONFIG_LIS2DH_AXES_Y)
+	#define LIS2DH_ACCEL_EN_BITS		 LIS2DH_ACCEL_Y_EN_BIT
+#elif defined(CONFIG_LIS2DH_AXES_Z)
+	#define LIS2DH_ACCEL_EN_BITS		 LIS2DH_ACCEL_Z_EN_BIT
+#elif defined(CONFIG_LIS2DH_AXES_XY)
+	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
+										 LIS2DH_ACCEL_Y_EN_BIT)
+#elif defined(CONFIG_LIS2DH_AXES_XZ)
+	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
+										 LIS2DH_ACCEL_Z_EN_BIT)
+#elif defined(CONFIG_LIS2DH_AXES_YZ)
+	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_Y_EN_BIT | \
+										 LIS2DH_ACCEL_Z_EN_BIT)
+#elif defined(CONFIG_LIS2DH_AXES_XYZ) || defined(CONFIG_LIS2DH_AXES_RUNTIME)
+	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
+										 LIS2DH_ACCEL_Y_EN_BIT | \
+										 LIS2DH_ACCEL_Z_EN_BIT)
+#endif
+
 #define LIS2DH_ACCEL_XYZ_MASK		BIT_MASK(3)
 
 #define LIS2DH_LP_EN_BIT_MASK		BIT(3)
@@ -92,20 +115,7 @@
 #define LIS2DH_HPIS2_EN_BIT		BIT(1)
 #define LIS2DH_FDS_EN_BIT		BIT(3)
 #define LIs2DH_HPCF1			BIT(4)
-#define LIs2DH_HPCF2			BIT(5)
-#define LIS2DH_HPM0				BIT(6)
-#define LIS2DH_HPM1				BIT(7)
-
-#if defined(CONFIG_LIS2DH_HPM_REFERENCE)
-	#define LIS2DH_HPM_BITS		LIS2DH_HPM0
-#elif defined(CONFIG_LIS2DH_HPM_NORMAL)
-	#define LIS2DH_HPM_BITS		LIS2DH_HPM1
-#elif defined(CONFIG_LIS2DH_HPM_INT_RESET)
-	#define LIS2DH_HPM_BITS		(LIS2DH_HPM0 | \
-								LIS2DH_HPM1)
-#else
-	#define LIS2DH_HPM_BITS		0
-#endif		
+#define LIs2DH_HPCF2			BIT(5)	
 
 #define LIS2DH_REG_CTRL3		0x22
 #define LIS2DH_EN_DRDY1_INT1_SHIFT	4
@@ -263,6 +273,11 @@ struct lis2dh_data {
 	uint32_t scale;
 	bool powered_down;
 	uint8_t target_odr;
+#if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
+	bool target_X_axis;
+	bool target_Y_axis;
+	bool target_Z_axis;
+#endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct device *dev;
