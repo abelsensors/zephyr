@@ -36,6 +36,7 @@
 #define MDM_REVISION_LENGTH 32
 #define MDM_IMEI_LENGTH 24
 #define MDM_ICCID_LENGTH 24
+#define MDM_TIME_LENGTH 24
 #define MDM_IP_LENGTH 16
 #define MDM_POWER_ENABLE 0
 #define MDM_POWER_DISABLE 1
@@ -74,6 +75,7 @@ struct modem_info {
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_ip[MDM_IP_LENGTH];
+	char mdm_time[MDM_TIME_LENGTH];
 };
 
 static struct modem_info minfo;
@@ -204,6 +206,22 @@ int n310_get_network_state(void)
 	return mdata.network_state;
 }
 
+/* get module time */
+char *n310_get_time(void)
+{
+	int ret;
+
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, "AT+CCLK?", &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to update system time.");
+	}
+
+	return minfo.mdm_time;
+}
+
 /* helper macro to keep readability */
 #define ATOI(s_, value_, desc_) modem_atoi((s_), (value_), (desc_), (__func__))
 static int modem_atoi(const char *s, const int err_value, const char *desc,
@@ -305,6 +323,19 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 				    sizeof(minfo.mdm_revision) - 1,
 				    data->rx_buf, 0, len);
 	minfo.mdm_revision[out_len] = '\0';
+
+	return 0;
+}
+
+/* CMD: +CCLK*/
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_time)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(minfo.mdm_time,
+				    sizeof(minfo.mdm_time) - 1,
+				    data->rx_buf, 0, len);
+	minfo.mdm_time[out_len] = '\0';
 
 	return 0;
 }
@@ -511,6 +542,7 @@ static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("REBOOTING", on_cmd_ok, 0U, ""),
 	MODEM_CMD("+CCID: ", on_cmd_atcmdinfo_iccid, 0U, ""),
 	MODEM_CMD("+CGPADDR: ", on_cmd_cpgaddr, 1U, ""),
+	MODEM_CMD("+CCLK: ", on_cmd_atcmdinfo_time, 1U, ""),
 };
 
 /* unsolicited command handling */
@@ -1107,6 +1139,8 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CIPCA=1"),
 	/* enable HEX mode for +USOWR, +USOST, +USORD and +USORF AT commands. */
 	SETUP_CMD_NOHANDLE("AT+UDCONF=1,1"),
+	/* enable automatic time update and set time zone to UTC */
+	SETUP_CMD_NOHANDLE("AT+CTZU=2"),
 	/* get and store modem info */
 	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
 	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),

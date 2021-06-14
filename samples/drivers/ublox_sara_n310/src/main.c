@@ -67,6 +67,8 @@ void main(void)
 		char *buffer = "ABDD";
 		char recvBuffer[MAX_BUF] = "\0";
 
+		LOG_INF("UTC Time: %s", log_strdup(n310_get_time()));
+
 		LOG_INF("Sending...");
 		n = sendto(sockfd, buffer, strlen(buffer) / 2,
 			   RELEASE_AFTER_FIRST_DOWNLINK,

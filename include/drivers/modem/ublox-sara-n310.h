@@ -43,6 +43,7 @@ char *n310_get_imei(void);
 char *n310_get_manufacturer(void);
 char *n310_get_revision(void);
 char *n310_get_ip(void);
+char *n310_get_time(void);
 int n310_get_network_state(void);
 
 /* set manual operator */
