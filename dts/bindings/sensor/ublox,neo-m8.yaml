@@ -1,13 +1,9 @@
 # Copyright (c) 2021, Abel Sensors
 # SPDX-License-Identifier: Apache-2.0
 
-description: ""
+description: "ublox neo-m8 GNSS module"
     
 compatible: "ublox,neo-m8"
 
 include: i2c-device.yaml
-
-properties:
-  label:
-    required: true
 
