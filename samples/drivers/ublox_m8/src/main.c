@@ -7,15 +7,7 @@
 #include <math.h>
 
 #define I2C_M8N_ADDR 0x42
-<<<<<<< HEAD
-<<<<<<< HEAD
 #define I2C_M8N_REG_ADDR 0x00
-=======
-#define I2C_M8N_REG_ADDR 0xFF
->>>>>>> 4a72edb255... initial test application functionality
-=======
-#define I2C_M8N_REG_ADDR 0x00
->>>>>>> 1617431a63... resolved I2C functionality issue
 #define SUCCESS 0
 
 const struct device * i2c_dev;
@@ -26,19 +18,9 @@ static int m8n_i2c_read_reg(const struct device *dev, uint8_t reg_addr,
     // struct m8n_data *data = dev->data;
     // const struct m8n_config *cfg = dev->config;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	int data = 0xFF;
 
     return i2c_reg_read_byte(i2c_dev,I2C_M8N_ADDR,I2C_M8N_REG_ADDR , data);
-=======
-    return i2c_reg_read_byte(i2c_dev,I2C_M8N_ADDR,reg_addr, value);
->>>>>>> 4a72edb255... initial test application functionality
-=======
-	int data = 0xFF;
-
-    return i2c_reg_read_byte(i2c_dev,I2C_M8N_ADDR,I2C_M8N_REG_ADDR , data);
->>>>>>> 1617431a63... resolved I2C functionality issue
 	// 	return i2c_transfer(i2c_dev, &msgs[0], 1, I2C_M8N_ADDR);
 }
 
@@ -47,8 +29,6 @@ static int m8n_i2c_write_reg(const struct device *dev, uint8_t reg_addr,
 {
     // struct m8n_data *data = dev->data;
     // const struct m8n_config *cfg = dev->config;
-<<<<<<< HEAD
-<<<<<<< HEAD
 	int data = 0xFF;
 
     return i2c_reg_write_byte(i2c_dev,I2C_M8N_ADDR,I2C_M8N_REG_ADDR , data);
@@ -95,60 +75,6 @@ static int m8n_i2c_write_reg(const struct device *dev, uint8_t reg_addr,
     // return 0;
 //}
 
-=======
-=======
-	int data = 0xFF;
->>>>>>> 1617431a63... resolved I2C functionality issue
-
-    return i2c_reg_write_byte(i2c_dev,I2C_M8N_ADDR,I2C_M8N_REG_ADDR , data);
-}
-
-//static uint16_t ubloxGetStreamBacklog( void )
-//{
-    // uint8_t rawdata[2] = { 0 };
-    // if ( I2cReadBuffer( i2c_dev, I2C_M8N_ADDR  << 1, 0xFD, (uint8_t*) &data, 2 ) != SUCCESS ) return 0;
-
-    // return rawdata[0] << 8 | ( rawdata[1] & 0xff );
-//}
-
-//uint8_t ubloxRunParser()
-//{
-    // uint8_t data[25] = { 0 };
-
-    // uint16_t dataAvailable = ubloxGetStreamBacklog();
-    // if ( dataAvailable > sizeof ( data ) )
-    // {
-    //     dataAvailable = sizeof ( data );
-    // }
-
-    // if ( dataAvailable && I2cReadBuffer( i2c_dev, I2C_M8N_ADDR << 1, 0xFF, data, dataAvailable ) == SUCCESS )
-    // {
-    //     for ( uint8_t i = 0; i < dataAvailable; i++ )
-    //     {
-    //         if ( IsFifoFull( &UbloxFifo ) )
-    //         {
-    //             abelDebugMessage( llerror, "[tracker] U-blox FIFO buffer is full!" );
-    //             break;
-    //         }
-    //         FifoPush( &UbloxFifo, data[i] );
-
-    //     }
-    // }
-
-    // while ( !IsFifoEmpty( &UbloxFifo ) )
-    // {
-    //     uint8_t retVal = ubloxInput( ublox, FifoPop( &UbloxFifo ) );
-    //     if ( retVal > 0 ) return retVal;
-    // }
-
-<<<<<<< HEAD
-    return 0;
-}
->>>>>>> 4a72edb255... initial test application functionality
-=======
-    // return 0;
-//}
->>>>>>> 1617431a63... resolved I2C functionality issue
 
 
 void main(void)
@@ -161,8 +87,6 @@ void main(void)
 		printk("I2C: Device driver not found.\n");
 	} 
 	else {
-<<<<<<< HEAD
-<<<<<<< HEAD
 		i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_FAST));
 		printk("Device binding succesful.\n");
     }
@@ -187,57 +111,6 @@ void main(void)
             printk("Read 0x%X from address 0x00.\n", data[0]);
         }
     }	
-=======
-		i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
-		printk("Device binding succesful.\n");
-    }
-
-	/* Do one-byte read/write */
-	data[0] = 0xFF;
-	ret = m8n_i2c_write_reg(i2c_dev, 0x00, &data[0]);
-	if (ret) {
-		printk("Error writing to specified register: error code (%d)\n", ret);
-		return;
-	} else {
-		printk("Wrote 0xFF to address 0x00 (%d).\n", ret);
-	}
-
-	data[0] = 0x00;
-	ret = m8n_i2c_read_reg(i2c_dev, 0x00, &data[0]);
-	if (ret) {
-		printk("Error reading from specified register: error code (%d)\n", ret);
-		return;
-	// } else {
-		printk("Read 0x%X from address 0x00.\n", data[0]);
-	// }
-	
->>>>>>> 4a72edb255... initial test application functionality
-=======
-		i2c_configure(i2c_dev, I2C_SPEED_SET(I2C_SPEED_FAST));
-		printk("Device binding succesful.\n");
-    }
-
-    while(1){
-        /* Do one-byte read/write */
-        data[0] = 0xFF;
-        ret = m8n_i2c_write_reg(i2c_dev, 0x00, &data[0]);
-        if (ret) {
-            printk("Error writing to specified register: error code (%d)\n", ret);
-
-        } else {
-            printk("Wrote 0xFF to address 0x00 (%d).\n", ret);
-        }
-
-        data[0] = 0x00;
-        ret = m8n_i2c_read_reg(i2c_dev, 0x00, &data[0]);
-        if (ret) {
-            printk("Error reading from specified register: error code (%d)\n", ret);
-
-        } else {
-            printk("Read 0x%X from address 0x00.\n", data[0]);
-        }
-    }	
->>>>>>> 1617431a63... resolved I2C functionality issue
 }
 
 // static int write_bytes(const struct device *i2c_dev, uint16_t addr,
@@ -291,8 +164,4 @@ void main(void)
 // 	msgs[1].flags = I2C_MSG_READ | I2C_MSG_STOP;
 
 // 	return i2c_transfer(i2c_dev, &msgs[0], 2, I2C_M8N_ADDR);
-<<<<<<< HEAD
 // }
-=======
-// }
->>>>>>> 4a72edb255... initial test application functionality
