@@ -1,0 +1,11 @@
+# Abel Sensors
+#
+# Copyright (c) 2021, Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config NEO_M8
+	bool "ublox neo m8 driver"
+	default n
+	help
+	  Atmel SAM MCU family Quadrature Decoder (TC) driver.

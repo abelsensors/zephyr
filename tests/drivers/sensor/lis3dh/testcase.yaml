@@ -1,0 +1,4 @@
+tests:
+  sample.sensor.lis2dh:
+    tags: sensor
+    platform_allow: qemu_cortex_m3
