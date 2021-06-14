@@ -94,6 +94,7 @@ struct modem_data {
 
 	struct k_sem sem_response;
 	enum n310_network_state network_state;
+	enum n310_operator_state operator_state;
 
 	/* socket data */
 	struct modem_socket_config socket_config;
@@ -206,6 +207,11 @@ int n310_get_network_state(void)
 	return mdata.network_state;
 }
 
+int n310_get_operator_state(void)
+{
+	return mdata.operator_state;
+}
+
 /* get module time */
 char *n310_get_time(void)
 {
@@ -249,6 +255,13 @@ MODEM_CMD_DEFINE(on_cmd_ok)
 {
 	modem_cmd_handler_set_error(data, 0);
 	k_sem_give(&mdata.sem_response);
+
+	if (mdata.operator_state == OP_REGISTERING) {
+		mdata.operator_state = OP_REGISTERED;
+	} else if (mdata.operator_state == OP_DEREGISTERING) {
+		mdata.operator_state = OP_NOT_REGISTERED;
+	}
+
 	return 0;
 }
 
@@ -258,6 +271,12 @@ MODEM_CMD_DEFINE(on_cmd_error)
 	modem_cmd_handler_set_error(data, -EINVAL);
 	k_sem_give(&mdata.sem_response);
 	LOG_ERR("error");
+
+	if (mdata.operator_state == OP_REGISTERING ||
+	    mdata.operator_state == OP_DEREGISTERING) {
+		mdata.operator_state = OP_NOT_REGISTERED;
+	}
+
 	return 0;
 }
 
@@ -332,8 +351,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_time)
 {
 	size_t out_len;
 
-	out_len = net_buf_linearize(minfo.mdm_time,
-				    sizeof(minfo.mdm_time) - 1,
+	out_len = net_buf_linearize(minfo.mdm_time, sizeof(minfo.mdm_time) - 1,
 				    data->rx_buf, 0, len);
 	minfo.mdm_time[out_len] = '\0';
 
@@ -1057,11 +1075,29 @@ int n310_psm_config(int mode, char *periodic_TAU, char *active_time)
 	return ret;
 }
 
+/* Deregister operator */
+static int deregister_operator(k_timeout_t timeout_sec)
+{
+	int ret;
+	mdata.operator_state = OP_DEREGISTERING;
+
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, "AT+COPS=2", &mdata.sem_response,
+			      timeout_sec, true);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to deregister operator, error code: %d", ret);
+	}
+
+	return ret;
+}
+
 /* Set manual operator */
 int n310_set_operator_manual(char *operator_id, int timeout_sec)
 {
 	int ret;
 	char buf[sizeof("AT+COPS=1,2,\"########\"\r")];
+	mdata.operator_state = OP_REGISTERING;
 
 	snprintk(buf, sizeof(buf), "AT+COPS=1,2,\"%s\"", operator_id);
 	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
@@ -1069,12 +1105,9 @@ int n310_set_operator_manual(char *operator_id, int timeout_sec)
 			      K_SECONDS(timeout_sec), true);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to set manual operator: %s, error code: %d",
-			log_strdup(operator_id), ret);
+		LOG_ERR("Failed to set manual operator before given timeout, error code: %d",
+			ret);
 	}
-
-	/* update IP address */
-	n310_get_ip();
 
 	return ret;
 }
@@ -1082,18 +1115,16 @@ int n310_set_operator_manual(char *operator_id, int timeout_sec)
 int n310_set_operator_auto(int timeout_sec)
 {
 	int ret;
+	mdata.operator_state = OP_REGISTERING;
 
 	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
 			      NULL, 0U, "AT+COPS=0", &mdata.sem_response,
 			      K_SECONDS(timeout_sec), true);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to set operator automatically, error code: %d",
+		LOG_ERR("Failed to set operator automatically before given timeout, error code: %d",
 			ret);
 	}
-
-	/* update IP address*/
-	n310_get_ip();
 
 	return ret;
 }
@@ -1208,12 +1239,9 @@ static int modem_reset(bool hard)
 	}
 
 	/* deregister operator */
-	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
-			      NULL, 0, "AT+COPS=2", &mdata.sem_response,
-			      MDM_REGISTRATION_TIMEOUT, true);
+	ret = deregister_operator(MDM_REGISTRATION_TIMEOUT);
 
 	if (ret < 0) {
-		LOG_ERR("AT+COPS=2 error: %d", ret);
 		return ret;
 	}
 

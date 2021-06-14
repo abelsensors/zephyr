@@ -42,7 +42,12 @@ void main(void)
 	addr.sin_port = htons(4242);
 	inet_pton(AF_INET, "192.168.0.20", &addr.sin_addr);
 
-	n310_set_operator_manual("20404", 20);
+	int c = 0;
+	n310_set_operator_manual("20404", 1);
+	while (n310_get_operator_state() != OP_REGISTERED) {
+		printk("Busy: %d\n", c++);
+		k_msleep(300);
+	}
 
 	LOG_INF("Manufacturer: %s", log_strdup(n310_get_manufacturer()));
 	LOG_INF("Model: %s", log_strdup(n310_get_model()));
@@ -68,7 +73,6 @@ void main(void)
 		char recvBuffer[MAX_BUF] = "\0";
 
 		LOG_INF("UTC Time: %s", log_strdup(n310_get_time()));
-
 		LOG_INF("Sending...");
 		n = sendto(sockfd, buffer, strlen(buffer) / 2,
 			   RELEASE_AFTER_FIRST_DOWNLINK,
@@ -86,6 +90,19 @@ void main(void)
 			strcpy(recvBuffer, "No data in buffer.");
 		}
 		LOG_INF("Received: %s", log_strdup(recvBuffer));
+
+		if (c % 2 == 0) {
+			n310_set_operator_auto(2);
+		} else {
+			n310_set_operator_manual("20404", 2);
+		}
+
+		while (n310_get_operator_state() != OP_REGISTERED) {
+			printk("Busy...\n");
+			k_msleep(300);
+		}
+
+		c++;
 
 		k_msleep(2000);
 	}

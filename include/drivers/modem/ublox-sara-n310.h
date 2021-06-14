@@ -45,6 +45,7 @@ char *n310_get_revision(void);
 char *n310_get_ip(void);
 char *n310_get_time(void);
 int n310_get_network_state(void);
+int n310_get_operator_state(void);
 
 /* set manual operator */
 int n310_set_operator_manual(char* operator_id, int timeout_sec);
@@ -58,6 +59,14 @@ enum n310_network_state {
 	N310_REGISTRATION_DENIED,
 	N310_UNKNOWN,
 	N310_REGISTERED_ROAMING,
+};
+
+/* operator state */
+enum n310_operator_state {
+	OP_NOT_REGISTERED = 0,
+	OP_REGISTERED,
+	OP_DEREGISTERING,
+	OP_REGISTERING,
 };
 
 #endif /* UBLOX_SARA_N310_H_ */
