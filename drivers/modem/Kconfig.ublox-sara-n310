@@ -27,4 +27,11 @@ config MODEM_UBLOX_SARA_N310_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config MODEM_UBLOX_SARA_N310_AUTOCONNECT
+	bool "Enable autoconnect on boot"
+	default true
+	help
+	  Choose this setting to enable autoconnect on boot.
+	  This is done through the AT+COPS=0 command.
+
 endif # MODEM_UBLOX_SARA_N310

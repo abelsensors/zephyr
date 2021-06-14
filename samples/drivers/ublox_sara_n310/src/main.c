@@ -33,14 +33,6 @@ void main(void)
 		return;
 	}
 
-	LOG_INF("Manufacturer: %s", log_strdup(n310_get_manufacturer()));
-	LOG_INF("Model: %s", log_strdup(n310_get_model()));
-	LOG_INF("Revision: %s", log_strdup(n310_get_revision()));
-	LOG_INF("ICCID: %s", log_strdup(n310_get_iccid()));
-	LOG_INF("IMEI: %s", log_strdup(n310_get_imei()));
-	LOG_INF("IP: %s", log_strdup(n310_get_ip()));
-	LOG_INF("Network state: %d", n310_get_network_state());
-
 	n310_psm_set_csclk(2);
 	n310_psm_config(PSM_ENABLE, PERIODIC_TAU, ACTIVE_TIME);
 	n310_psm_set_mode(PM2);
@@ -49,6 +41,16 @@ void main(void)
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(4242);
 	inet_pton(AF_INET, "192.168.0.20", &addr.sin_addr);
+
+	n310_set_operator_manual("20404", 20);
+
+	LOG_INF("Manufacturer: %s", log_strdup(n310_get_manufacturer()));
+	LOG_INF("Model: %s", log_strdup(n310_get_model()));
+	LOG_INF("Revision: %s", log_strdup(n310_get_revision()));
+	LOG_INF("ICCID: %s", log_strdup(n310_get_iccid()));
+	LOG_INF("IMEI: %s", log_strdup(n310_get_imei()));
+	LOG_INF("IP: %s", log_strdup(n310_get_ip()));
+	LOG_INF("Network state: %d", n310_get_network_state());
 
 	sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sockfd < 0) {

@@ -78,37 +78,6 @@ struct modem_info {
 
 static struct modem_info minfo;
 
-/* modem_info getters */
-char *n310_get_model(void)
-{
-	return minfo.mdm_model;
-}
-
-char *n310_get_iccid(void)
-{
-	return minfo.mdm_iccid;
-}
-
-char *n310_get_manufacturer(void)
-{
-	return minfo.mdm_manufacturer;
-}
-
-char *n310_get_revision(void)
-{
-	return minfo.mdm_revision;
-}
-
-char *n310_get_imei(void)
-{
-	return minfo.mdm_imei;
-}
-
-char *n310_get_ip(void)
-{
-	return minfo.mdm_ip;
-}
-
 /* data struct */
 struct modem_data {
 	struct net_if *net_iface;
@@ -146,24 +115,6 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0,
 K_THREAD_STACK_DEFINE(modem_rx_stack, MDM_MAX_DATA_LENGTH);
 static struct k_thread rx_data;
 
-/* helper macro to keep readability */
-#define ATOI(s_, value_, desc_) modem_atoi((s_), (value_), (desc_), (__func__))
-static int modem_atoi(const char *s, const int err_value, const char *desc,
-		      const char *func)
-{
-	int ret;
-	char *endptr;
-
-	ret = (int)strtol(s, &endptr, 10);
-	if (!endptr || *endptr != '\0') {
-		LOG_ERR("bad %s '%s' in %s", log_strdup(s), log_strdup(desc),
-			log_strdup(func));
-		return err_value;
-	}
-
-	return ret;
-}
-
 /* send AT command */
 static int send_at_command(struct modem_iface *iface,
 			   struct modem_cmd_handler *handler,
@@ -194,6 +145,48 @@ static int send_at_command(struct modem_iface *iface,
 	return ret;
 }
 
+/* modem_info getters */
+char *n310_get_model(void)
+{
+	return minfo.mdm_model;
+}
+
+char *n310_get_iccid(void)
+{
+	return minfo.mdm_iccid;
+}
+
+char *n310_get_manufacturer(void)
+{
+	return minfo.mdm_manufacturer;
+}
+
+char *n310_get_revision(void)
+{
+	return minfo.mdm_revision;
+}
+
+char *n310_get_imei(void)
+{
+	return minfo.mdm_imei;
+}
+
+char *n310_get_ip(void)
+{
+	int ret;
+
+	/* query for IP address once and store in modem context */
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0, "AT+CGPADDR=", &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to update IP address.");
+	}
+
+	return minfo.mdm_ip;
+}
+
 /* network state getter */
 int n310_get_network_state(void)
 {
@@ -204,10 +197,29 @@ int n310_get_network_state(void)
 			      MDM_CMD_TIMEOUT, true);
 
 	if (ret < 0) {
+		LOG_ERR("Failed to update network CEREG state.");
 		return ret;
 	}
 
 	return mdata.network_state;
+}
+
+/* helper macro to keep readability */
+#define ATOI(s_, value_, desc_) modem_atoi((s_), (value_), (desc_), (__func__))
+static int modem_atoi(const char *s, const int err_value, const char *desc,
+		      const char *func)
+{
+	int ret;
+	char *endptr;
+
+	ret = (int)strtol(s, &endptr, 10);
+	if (!endptr || *endptr != '\0') {
+		LOG_ERR("bad %s '%s' in %s", log_strdup(s), log_strdup(desc),
+			log_strdup(func));
+		return err_value;
+	}
+
+	return ret;
 }
 
 /*
@@ -239,7 +251,6 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycereg)
 	memset(temp, '\0', sizeof(temp));
 	strncpy(temp, argv[0], 1);
 	mdata.network_state = ATOI(temp, 0, "stat");
-	LOG_DBG("CEREG:%d", mdata.network_state);
 	return 0;
 }
 
@@ -1014,6 +1025,47 @@ int n310_psm_config(int mode, char *periodic_TAU, char *active_time)
 	return ret;
 }
 
+/* Set manual operator */
+int n310_set_operator_manual(char *operator_id, int timeout_sec)
+{
+	int ret;
+	char buf[sizeof("AT+COPS=1,2,\"########\"\r")];
+
+	snprintk(buf, sizeof(buf), "AT+COPS=1,2,\"%s\"", operator_id);
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, buf, &mdata.sem_response,
+			      K_SECONDS(timeout_sec), true);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to set manual operator: %s, error code: %d",
+			log_strdup(operator_id), ret);
+	}
+
+	/* update IP address */
+	n310_get_ip();
+
+	return ret;
+}
+
+int n310_set_operator_auto(int timeout_sec)
+{
+	int ret;
+
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0U, "AT+COPS=0", &mdata.sem_response,
+			      K_SECONDS(timeout_sec), true);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to set operator automatically, error code: %d",
+			ret);
+	}
+
+	/* update IP address*/
+	n310_get_ip();
+
+	return ret;
+}
+
 /* Pin initialization */
 static int pin_init(void)
 {
@@ -1039,49 +1091,62 @@ static int pin_init(void)
 	return 0;
 }
 
+/* Setup CMD struct used in modem reset function */
+static const struct setup_cmd setup_cmds[] = {
+	/* turn off echo */
+	SETUP_CMD_NOHANDLE("ATE0"),
+	/* stop functionality */
+	SETUP_CMD_NOHANDLE("AT+CFUN=0"),
+	/* extended error numbers */
+	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
+	/* UNC messages for registration */
+	SETUP_CMD_NOHANDLE("AT+CREG=1"),
+	/* enable PSM URC for debugging */
+	SETUP_CMD_NOHANDLE("AT+NPSMR=1"),
+	/* enable PDP context */
+	SETUP_CMD_NOHANDLE("AT+CIPCA=1"),
+	/* enable HEX mode for +USOWR, +USOST, +USORD and +USORF AT commands. */
+	SETUP_CMD_NOHANDLE("AT+UDCONF=1,1"),
+	/* get and store modem info */
+	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
+	SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
+	SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
+	SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
+	SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
+	/* enable functionality */
+	SETUP_CMD_NOHANDLE("AT+CFUN=1"),
+};
+
 /*
  * Modem reset function.
  * Resets the modem, sends setup commands and waits for modem to be functional.
  */
-int n310_modem_reset(void)
+static int modem_reset(bool hard)
 {
 	int ret = 0, counter = 0;
 
 	LOG_INF("Starting modem...");
 
-	static const struct setup_cmd setup_cmds[] = {
-		/* turn off echo */
-		SETUP_CMD_NOHANDLE("ATE0"),
-		/* stop functionality */
-		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
-		/* extended error numbers */
-		SETUP_CMD_NOHANDLE("AT+CMEE=1"),
-		/* UNC messages for registration */
-		SETUP_CMD_NOHANDLE("AT+CREG=1"),
-		/* enable PSM URC for debugging */
-		SETUP_CMD_NOHANDLE("AT+NPSMR=1"),
-		/* enable PDP context */
-		SETUP_CMD_NOHANDLE("AT+CIPCA=1"),
-		/* enable HEX mode for +USOWR, +USOST, +USORD and +USORF AT commands. */
-		SETUP_CMD_NOHANDLE("AT+UDCONF=1,1"),
-		/* get and store modem info */
-		SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
-		SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
-		SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
-		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
-		SETUP_CMD("AT+CCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
-		/* enable functionality */
-		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
-	};
+	if (hard) {
+		/* reset module through pins */
+		pin_init();
+	} else {
+		/* reset module through AT+NRB command */
+		ret = send_at_command(&mdata.context.iface,
+				      &mdata.context.cmd_handler, NULL, 0,
+				      "AT+NRB", &mdata.sem_response,
+				      MDM_REGISTRATION_TIMEOUT, true);
 
-	/* reset module through pins */
-	pin_init();
+		if (ret < 0) {
+			LOG_ERR("Soft modem reset failed, error: %d", ret);
+		}
+	}
 
 	/* give modem time to start responding after restart */
 	ret = -1;
 
 	while (counter++ < 50 && ret < 0) {
-		k_sleep(K_SECONDS(2));
+		k_sleep(K_MSEC(200));
 		ret = send_at_command(&mdata.context.iface,
 				      &mdata.context.cmd_handler, NULL, 0, "AT",
 				      &mdata.sem_response, MDM_CMD_TIMEOUT,
@@ -1108,27 +1173,39 @@ int n310_modem_reset(void)
 		return ret;
 	}
 
-	/* register operator automatically */
+	/* deregister operator */
 	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
-			      NULL, 0, "AT+COPS=0", &mdata.sem_response,
+			      NULL, 0, "AT+COPS=2", &mdata.sem_response,
 			      MDM_REGISTRATION_TIMEOUT, true);
 
 	if (ret < 0) {
-		LOG_ERR("AT+COPS error: %d", ret);
+		LOG_ERR("AT+COPS=2 error: %d", ret);
 		return ret;
 	}
 
-	/* query for IP address once */
-	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
-			      NULL, 0, "AT+CGPADDR=", &mdata.sem_response,
-			      MDM_CMD_TIMEOUT, true);
+#if defined(CONFIG_MODEM_UBLOX_SARA_N310_AUTOCONNECT)
+	/* register operator automatically */
+	ret = n310_set_operator_auto(20);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to obtain IP address");
+		return ret;
 	}
+#endif
 
 	LOG_INF("Modem is ready.");
 	return 0;
+}
+
+/* Public hard reset function */
+int n310_modem_reset_hard()
+{
+	return modem_reset(true);
+}
+
+/* Public soft reset function */
+int n310_modem_reset_soft()
+{
+	return modem_reset(false);
 }
 
 /*
@@ -1199,7 +1276,7 @@ static int n310_driver_init(const struct device *device)
 			(k_thread_entry_t)n310_recv, NULL, NULL, NULL,
 			RX_PRIORITY, 0, K_NO_WAIT);
 
-	n310_modem_reset();
+	modem_reset(true);
 
 	return 0;
 }

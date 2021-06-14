@@ -33,7 +33,8 @@ int n310_psm_set_csclk(int setting);
 int n310_psm_config(int mode, char *periodic_TAU, char *active_time);
 
 /* reset modem */
-int n310_modem_reset(void);
+int n310_modem_reset_hard(void);
+int n310_modem_reset_soft(void);
 
 /* get modem info */
 char *n310_get_model(void);
@@ -43,6 +44,10 @@ char *n310_get_manufacturer(void);
 char *n310_get_revision(void);
 char *n310_get_ip(void);
 int n310_get_network_state(void);
+
+/* set manual operator */
+int n310_set_operator_manual(char* operator_id, int timeout_sec);
+int n310_set_operator_auto(int timeout_sec);
 
 /* network state */
 enum n310_network_state {
