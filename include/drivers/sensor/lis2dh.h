@@ -25,25 +25,6 @@ enum sensor_attribute_lis2dh {
 	SENSOR_ATTR_LIS2DH_ACT_DUR,
 };
 
-#if defined(CONFIG_PM_DEVICE)
-/**
- * @brief Put the sensor in powered-down mode.
- *
- * @param dev Pointer to the sensor device
- * @param power_down Boolean value whether the device should be powered down.
- * @return 0 if successful, negative errno code if failure.
- */
-int lis2dh_power_down_set(const struct device *dev, bool power_down);
-
-/**
- * @brief Get the sensors powered-down state.
- *
- * @param dev Pointer to the sensor device
- * @return true if power down mode is enabled, false if not powered down.
- */
-bool lis2dh_power_down_get(const struct device *dev);
-#endif /* CONFIG_PM_DEVICE */
-
 /**
  * @brief reset the sensors registers.
  *

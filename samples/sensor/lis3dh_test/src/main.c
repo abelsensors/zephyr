@@ -161,31 +161,30 @@ void main(void)
 
 		slope_TH_set(sensor, 8, 0);
 		slope_DUR_set(sensor, 1);
-
 		printf("Waiting for triggers\n");
+		k_sleep(K_MSEC(3000));
 		while (true) {
 			/* power down the sensor */
 			pm_device_state_set(sensor, PM_DEVICE_STATE_LOW_POWER, NULL, NULL);
 			k_sleep(K_MSEC(2000));
-#if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
-			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, false);
-			k_sleep(K_MSEC(2000));
-#endif
+			
+			
 			/* re-enable the sensor */
 			pm_device_state_set(sensor, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
-			k_sleep(K_MSEC(1000));
+			
 #if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
+			k_sleep(K_MSEC(500));
 			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, false);
-			k_sleep(K_MSEC(1000));
+			k_sleep(K_MSEC(500));
 			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, true);
 			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Y, false);
-			k_sleep(K_MSEC(1000));
+			k_sleep(K_MSEC(500));
 			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Y, true);
 			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Z, false);
-			k_sleep(K_MSEC(1000));
+			k_sleep(K_MSEC(500));
 			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Z, true);
 #endif
-			k_sleep(K_MSEC(1000));
+			k_sleep(K_MSEC(2000));
 		}
 	}
 #else /* CONFIG_LIS2DH_TRIGGER */

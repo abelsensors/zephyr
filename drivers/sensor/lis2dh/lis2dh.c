@@ -83,7 +83,7 @@ static int lis2dh_sample_fetch(const struct device *dev,
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	size_t i;
-	int status;
+	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
 			chan == SENSOR_CHAN_ACCEL_XYZ);
@@ -92,12 +92,12 @@ static int lis2dh_sample_fetch(const struct device *dev,
 	 * since status and all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
 	 */
-	status = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_STATUS,
+	ret = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_STATUS,
 					  lis2dh->sample.raw,
 					  sizeof(lis2dh->sample.raw));
-	if (unlikely(status < 0)) {
+	if (unlikely(ret < 0)) {
 		LOG_WRN("Could not read accel axis data");
-		return status;
+		return ret;
 	}
 
 	for (i = 0; i < (3 * sizeof(int16_t)); i += sizeof(int16_t)) {
@@ -140,7 +140,7 @@ static int lis2dh_freq_to_odr_val(uint16_t freq)
 static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
-	int status;
+	int ret;
 	uint8_t value;
 	struct lis2dh_data *lis2dh = dev->data;
 
@@ -150,9 +150,9 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 	}
 
 
-	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1, &value);
-	if (unlikely(status < 0)) {
-		return status;
+	ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1, &value);
+	if (unlikely(ret < 0)) {
+		return ret;
 	}
 
 	/* some odr values cannot be set in certain power modes */
@@ -189,46 +189,51 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 #endif
 
 #if defined(CONFIG_PM_DEVICE)
-int lis2dh_power_down_set(const struct device *dev, bool power_down)
+static int lis2dh_suspend(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
-	int status;
+	if (lis2dh->pm_state == PM_DEVICE_STATE_ACTIVE) {
 #if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-	uint8_t value;
-#endif
-	if (power_down == true && lis2dh->pm_state == PM_DEVICE_STATE_ACTIVE){
+		int ret;
+		uint8_t value;
 		/* check if high resolution mode is enabled as it is not allowed to
 			enable low power mode when high resolution mode is enabled */
-#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
-		if (unlikely(status < 0)) {
-			return status;
+		ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
+		if (unlikely(ret < 0)) {
+			return ret;
 		}
-		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value & ~LIS2DH_POWER_DOWN);
-		if (unlikely(status < 0)) {
-			return status;
+		ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value & ~LIS2DH_POWER_DOWN);
+		if (unlikely(ret < 0)) {
+			return ret;
 		}
 #endif
 		/* set ODR to 0, Enable Low Power and disable all axis */
-		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_POWER_DOWN);
-		if (unlikely(status < 0)) {
-			return status;
-		}
-		lis2dh->pm_state = PM_DEVICE_STATE_LOW_POWER;
-		return status;
+		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_POWER_DOWN);
+	} else {
+		LOG_INF("sensor already powered down");
+		return 0;
+	} 
+}
 
-	/* re-enable the lis2dh */
-	} else if (power_down == false && lis2dh->pm_state == PM_DEVICE_STATE_LOW_POWER) {
+static int lis2dh_resume_from_suspend(const struct device *dev)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+
+	if (lis2dh->pm_state == PM_DEVICE_STATE_LOW_POWER) {
+		int ret;
+#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
+		uint8_t value;
+#endif
 		uint8_t axes = 0;
 #if defined(CONFIG_LIS2DH_AXES_RUNTIME)
 		if (lis2dh->target_X_axis) {
-			axes = axes | (uint8_t)LIS2DH_ACCEL_X_EN_BIT;
+			axes |= (uint8_t)LIS2DH_ACCEL_X_EN_BIT;
 		}
 		if (lis2dh->target_Y_axis) {
-			axes = axes | (uint8_t)LIS2DH_ACCEL_Y_EN_BIT;
+			axes |= (uint8_t)LIS2DH_ACCEL_Y_EN_BIT;
 		}
 		if (lis2dh->target_Z_axis) {
-			axes = axes | (uint8_t)LIS2DH_ACCEL_Z_EN_BIT;
+			axes |= (uint8_t)LIS2DH_ACCEL_Z_EN_BIT;
 		}
 #else
 		axes = (uint8_t)LIS2DH_ACCEL_EN_BITS;
@@ -239,33 +244,35 @@ int lis2dh_power_down_set(const struct device *dev, bool power_down)
 #else
 		uint8_t odr = (uint8_t)LIS2DH_ODR_BITS;
 #endif /* CONFIG_LIS2DH_ODR_RUNTIME */
-		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, axes |\
+		ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, axes |\
 											 LIS2DH_LP_EN_BIT | odr);									
-		if (unlikely(status < 0)) {
-			return status;
+		if (unlikely(ret < 0)) {
+			return ret;
 		}
 
 #if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
 		/* re-enable High resolution mode */
-		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
-		if (unlikely(status < 0)) {
-			return status;
+		ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
+		if (unlikely(ret < 0)) {
+			return ret;
 		}
 
-		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value | LIS2DH_HR_BIT);
-		if (unlikely(status < 0)) {
-			return status;
+		ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value | LIS2DH_HR_BIT);
+		if (unlikely(ret < 0)) {
+			return ret;
 		}
 #endif
-		lis2dh->pm_state = PM_DEVICE_STATE_ACTIVE;
-		return status;
-	} else if (power_down == true && lis2dh->pm_state == PM_DEVICE_STATE_LOW_POWER) {
-		LOG_INF("sensor already powered down");
-		return 0;
+		return ret;
 	} else {
 		LOG_INF("sensor is not powered down");
 		return 0;
 	}
+}
+
+static int lis2dh_get_power_state(const struct device *dev)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	return lis2dh->pm_state;
 }
 #endif
 
@@ -310,16 +317,16 @@ int lis2dh_acc_act_config(const struct device *dev,
 			    const struct sensor_value *val)
 {
 	struct lis2dh_data *lis2dh = dev->data;
-	int status;
+	int ret;
 
 	if ((uint16_t)attr == SENSOR_ATTR_LIS2DH_ACT_TH) {
 		uint8_t range_g, reg_val;
 		uint32_t act_th_ums2;
 
-		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4,
+		ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4,
 						 &reg_val);
-		if (status < 0) {
-			return status;
+		if (ret < 0) {
+			return ret;
 		}
 
 		/* fs reg value is in the range 0 (2g) - 3 (16g) */
@@ -507,11 +514,11 @@ bool lis2dh_axis_get(const struct device *dev, enum sensor_channel chan)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	uint8_t value;
-	int status;
+	int ret;
 
-	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1, &value);
-	if (unlikely(status < 0)) {
-		return status;
+	ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1, &value);
+	if (unlikely(ret < 0)) {
+		return ret;
 	}
 
 	switch (chan) {
@@ -574,7 +581,7 @@ int lis2dh_reg_init(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
-	int status;
+	int ret;
 	uint8_t ctrl_raw[6];
 	uint8_t act_raw[2];
 	/* Initialize control register ctrl1 to ctrl 6 to default boot values
@@ -585,37 +592,37 @@ int lis2dh_reg_init(const struct device *dev)
 	(void)memset(ctrl_raw, 0, sizeof(ctrl_raw));
 	ctrl_raw[0] = LIS2DH_ACCEL_EN_BITS;
 
-	status = lis2dh->hw_tf->write_data(dev, LIS2DH_REG_CTRL1, ctrl_raw,
+	ret = lis2dh->hw_tf->write_data(dev, LIS2DH_REG_CTRL1, ctrl_raw,
 						sizeof(ctrl_raw));
-	if (unlikely(status < 0)) {
+	if (unlikely(ret < 0)) {
 		LOG_ERR("Failed to reset ctrl registers.");
-		return status;
+		return ret;
 	}
 
 	/* Reset ACT registers */
 	(void)memset(act_raw, 0, sizeof(act_raw));
-	status = lis2dh->hw_tf->write_data(dev, LIS2DH_REG_ACT_THS, act_raw,
+	ret = lis2dh->hw_tf->write_data(dev, LIS2DH_REG_ACT_THS, act_raw,
 						sizeof(act_raw));
-	if (unlikely(status < 0)) {
+	if (unlikely(ret < 0)) {
 		LOG_ERR("Failed to reset ACT registers.");
-		return status;
+		return ret;
 	}
 
 	/* set full scale range and store it for later conversion */
 	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
-	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4,
+	ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4,
 					LIS2DH_FS_BITS | LIS2DH_HR_BIT);
-	if (unlikely(status < 0)) {
+	if (unlikely(ret < 0)) {
 		LOG_ERR("Failed to set full scale ctrl register.");
-		return status;
+		return ret;
 	}
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {
-		status = lis2dh_init_interrupt(dev);
-		if (unlikely(status < 0)) {
+		ret = lis2dh_init_interrupt(dev);
+		if (unlikely(ret < 0)) {
 			LOG_ERR("Failed to initialize interrupts.");
-			return status;
+			return ret;
 		}
 	}
 #endif
@@ -623,7 +630,8 @@ int lis2dh_reg_init(const struct device *dev)
 	LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
 		    cfg->bus_name, 1 << (LIS2DH_FS_IDX + 1),
 		    LIS2DH_ODR_IDX, (uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
-
+	/* set pm_state as active */
+	lis2dh->pm_state = PM_DEVICE_STATE_ACTIVE;
 	/* enable accel measurements and set power mode and data rate */
 	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 					LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT |
@@ -634,7 +642,7 @@ int lis2dh_init(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
-	int status;
+	int ret;
 	uint8_t id;
 
 	lis2dh->bus = device_get_binding(cfg->bus_name);
@@ -645,10 +653,10 @@ int lis2dh_init(const struct device *dev)
 
 	cfg->bus_init(dev);
 
-	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
-	if (unlikely(status < 0)) {
+	ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
+	if (unlikely(ret < 0)) {
 		LOG_ERR("Failed to read chip id.");
-		return status;
+		return ret;
 	}
 
 	if (id != LIS2DH_CHIP_ID) {
@@ -665,12 +673,12 @@ int lis2dh_init(const struct device *dev)
 	}
 
 	if (cfg->disc_pull_up) {
-		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
+		ret = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
 						   LIS2DH_SDO_PU_DISC_MASK,
 						   LIS2DH_SDO_PU_DISC_MASK);
-		if (status < 0) {
+		if (ret < 0) {
 			LOG_ERR("Failed to disconnect SDO/SA0 pull-up.");
-			return status;
+			return ret;
 		}
 	}
 
@@ -686,13 +694,13 @@ int lis2dh_init(const struct device *dev)
 int lis2dh_reset(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
-	int status;
+	int ret;
 
-	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
+	ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
 					(uint8_t)LIS2DH_REBOOT_BIT);
-	if (unlikely(status < 0)) {
+	if (unlikely(ret < 0)) {
 		LOG_ERR("Failed to reset Lis2dh");
-		return status;
+		return ret;
 	}
 
 	LOG_DBG("Lis2dh has been reset, reinitialising...");
@@ -707,36 +715,30 @@ static int lis2dh_pm_control(const struct device *dev, uint32_t ctrl_command,
 	int ret = 0;
 	struct lis2dh_data *lis2dh = dev->data;
 
-	LOG_INF("PM controll called: %i, state: %i", ctrl_command, *((uint32_t*)state));
-
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
 		if (*((uint32_t*)state) == PM_DEVICE_STATE_ACTIVE) {
-			ret = lis2dh_power_down_set(dev, false);
+			ret = lis2dh_resume_from_suspend(dev);
 			if (ret < 0) {
 				return ret;
 			}
 			lis2dh->pm_state = PM_DEVICE_STATE_ACTIVE;
 		} else {
-			ret = lis2dh_power_down_set(dev, true);
+			ret = lis2dh_suspend(dev);
 			if (ret < 0) {
 				return ret;
 			}
 			lis2dh->pm_state = PM_DEVICE_STATE_LOW_POWER;
 		}
-
 		break;
-
 	case PM_DEVICE_STATE_GET:
-		*state = lis2dh->pm_state;
-
+		*state = lis2dh_get_power_state(dev);
 		break;
-
 	default:
 		ret = -EINVAL;
 	}
 
-	if (cb != NULL) {
+	if (cb) {
 		cb(dev, ret, state, arg);
 	}
 
