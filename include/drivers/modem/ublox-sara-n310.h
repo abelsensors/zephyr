@@ -47,6 +47,9 @@ char *n310_get_time(void);
 int n310_get_network_state(void);
 int n310_get_operator_state(void);
 
+/* +NUESTATS */
+char *n310_get_nuestats(char *type);
+
 /* set manual operator */
 int n310_set_operator_manual(char* operator_id, int timeout_sec);
 int n310_set_operator_auto(int timeout_sec);

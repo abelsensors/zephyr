@@ -38,6 +38,7 @@
 #define MDM_ICCID_LENGTH 24
 #define MDM_TIME_LENGTH 24
 #define MDM_IP_LENGTH 16
+#define MDM_NUESTATS_LENGTH 64
 #define MDM_POWER_ENABLE 0
 #define MDM_POWER_DISABLE 1
 
@@ -76,6 +77,7 @@ struct modem_info {
 	char mdm_imei[MDM_IMEI_LENGTH];
 	char mdm_ip[MDM_IP_LENGTH];
 	char mdm_time[MDM_TIME_LENGTH];
+	char mdm_nuestats[MDM_NUESTATS_LENGTH];
 };
 
 static struct modem_info minfo;
@@ -172,6 +174,26 @@ char *n310_get_revision(void)
 char *n310_get_imei(void)
 {
 	return minfo.mdm_imei;
+}
+
+char *n310_get_nuestats(char *type)
+{
+	int ret;
+	char buf[sizeof("AT+NUESTATS=\"#######\"\r")];
+
+	memset(minfo.mdm_nuestats, 0, sizeof(minfo.mdm_nuestats));
+
+	snprintk(buf, sizeof(buf), "AT+NUESTATS=\"%s\"", type);
+	ret = send_at_command(&mdata.context.iface, &mdata.context.cmd_handler,
+			      NULL, 0, buf, &mdata.sem_response,
+			      MDM_CMD_TIMEOUT, true);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to get NUESTATS.");
+		printk("%s", buf);
+	}
+
+	return minfo.mdm_nuestats;
 }
 
 char *n310_get_ip(void)
@@ -371,6 +393,24 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 	return 0;
 }
 
+/* CMD: +NUESTATS*/
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_nuestats)
+{
+	size_t out_len;
+	char buf[32];
+
+	out_len =
+		net_buf_linearize(buf, sizeof(buf)- 1,
+				  data->rx_buf, 0, len);
+	buf[out_len] = '\n';
+	buf[out_len+1] = '\0';
+
+	strcat(minfo.mdm_nuestats, buf);
+
+	return 0;
+}
+
+
 /* CMD: +NPSMR */
 MODEM_CMD_DEFINE(on_cmd_npsmr)
 {
@@ -561,6 +601,7 @@ static const struct modem_cmd response_cmds[] = {
 	MODEM_CMD("+CCID: ", on_cmd_atcmdinfo_iccid, 0U, ""),
 	MODEM_CMD("+CGPADDR: ", on_cmd_cpgaddr, 1U, ""),
 	MODEM_CMD("+CCLK: ", on_cmd_atcmdinfo_time, 1U, ""),
+	MODEM_CMD("+NUESTATS: ", on_cmd_atcmdinfo_nuestats, 1U, ""),
 };
 
 /* unsolicited command handling */
