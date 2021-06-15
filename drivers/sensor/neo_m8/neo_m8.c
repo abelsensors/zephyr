@@ -44,7 +44,6 @@ static int ublox_m8_get(const struct device *dev, enum sensor_channel chan,
 			struct sensor_value *val)
 {
 	printk("\ngetting m8 things");
-
 	return 0;
 }
 
@@ -73,14 +72,14 @@ static const struct sensor_driver_api ublox_m8_driver_api = {
 
 
 
-#define QDEC_SAM_INIT(n)						\
-	static const struct qdec_sam_dev_cfg qdec##n##_sam_config = {	\
+#define QDEC_SAM_INIT(inst)						\
+	static const struct ublox_m8_dev_cfg m8##inst##_sam_config = {	\
 	};								\
 									\
-	static struct qdec_sam_dev_data qdec##n##_sam_data;		\
+	static struct ublox_m8_dev_data m8##inst##_sam_data;		\
 									\
 	DEVICE_DT_INST_DEFINE(n, ublox_m8_initialize, NULL,		\
-			    &qdec##n##_sam_data, &qdec##n##_sam_config, \
+			    &m8##inst##_sam_data, &m8##inst##_sam_config, \
 			    POST_KERNEL, 80,	\
 			    &ublox_m8_driver_api);
 
