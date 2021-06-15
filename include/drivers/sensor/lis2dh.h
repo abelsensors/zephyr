@@ -25,6 +25,7 @@ enum sensor_attribute_lis2dh {
 	SENSOR_ATTR_LIS2DH_ACT_DUR,
 };
 
+#if defined(CONFIG_PM_DEVICE)
 /**
  * @brief Put the sensor in powered-down mode.
  *
@@ -41,6 +42,7 @@ int lis2dh_power_down_set(const struct device *dev, bool power_down);
  * @return true if power down mode is enabled, false if not powered down.
  */
 bool lis2dh_power_down_get(const struct device *dev);
+#endif /* CONFIG_PM_DEVICE */
 
 /**
  * @brief reset the sensors registers.
@@ -61,14 +63,6 @@ int lis2dh_reset(const struct device *dev);
  */
 int lis2dh_axis_set(const struct device *dev, enum sensor_channel chan, bool enable);
 
-/**
- * @brief Get the state of a specific axis
- *
- * @param dev Pointer to the sensor device.
- * @param chan Which axis to enable or disable.
- * @return true if axis is enabled, false if disabled.
- */
-bool lis2dh_axis_get(const struct device *dev, enum sensor_channel chan);
 #endif /* CONFIG_LIS2DH_AXES_RUNTIME*/
 
 #ifdef __cplusplus

@@ -126,6 +126,11 @@ void act_DUR_set(const struct device *sensor, uint16_t val1){
 	}
 }
 
+void sample_pm_device_cb(const struct device *dev, int status, uint32_t *state, void *arg){
+	printf("yeet? dev: %s, status: %i, state: %ls", dev->name, status, state);
+}
+
+
 void main(void)
 {
 	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
@@ -158,17 +163,17 @@ void main(void)
 		slope_DUR_set(sensor, 1);
 
 		printf("Waiting for triggers\n");
-
 		while (true) {
 			/* power down the sensor */
-			lis2dh_power_down_set(sensor, true);
-			k_sleep(K_MSEC(500));
+			pm_device_state_set(sensor, PM_DEVICE_STATE_LOW_POWER, NULL, NULL);
+			k_sleep(K_MSEC(2000));
 #if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
 			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, false);
-			k_sleep(K_MSEC(1000));
+			k_sleep(K_MSEC(2000));
 #endif
 			/* re-enable the sensor */
-			lis2dh_power_down_set(sensor, false);
+			pm_device_state_set(sensor, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
+			k_sleep(K_MSEC(1000));
 #if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
 			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, false);
 			k_sleep(K_MSEC(1000));

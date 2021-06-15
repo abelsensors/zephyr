@@ -40,8 +40,8 @@
 #define LIS2DH_ACCEL_Z_EN_BIT		BIT(2)
 #if defined(CONFIG_LIS2DH_AXES_RUNTIME)
 	#define LIS2DH_ACCEL_XYZ_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
-										 LIS2DH_ACCEL_Y_EN_BIT | \
-										 LIS2DH_ACCEL_Z_EN_BIT)
+					 LIS2DH_ACCEL_Y_EN_BIT | \
+					 LIS2DH_ACCEL_Z_EN_BIT)
 #endif
 #if defined(CONFIG_LIS2DH_AXES_X)
 	#define LIS2DH_ACCEL_EN_BITS		 LIS2DH_ACCEL_X_EN_BIT
@@ -51,17 +51,17 @@
 	#define LIS2DH_ACCEL_EN_BITS		 LIS2DH_ACCEL_Z_EN_BIT
 #elif defined(CONFIG_LIS2DH_AXES_XY)
 	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
-										 LIS2DH_ACCEL_Y_EN_BIT)
+					 LIS2DH_ACCEL_Y_EN_BIT)
 #elif defined(CONFIG_LIS2DH_AXES_XZ)
 	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
-										 LIS2DH_ACCEL_Z_EN_BIT)
+					 LIS2DH_ACCEL_Z_EN_BIT)
 #elif defined(CONFIG_LIS2DH_AXES_YZ)
 	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_Y_EN_BIT | \
-										 LIS2DH_ACCEL_Z_EN_BIT)
+					 LIS2DH_ACCEL_Z_EN_BIT)
 #elif defined(CONFIG_LIS2DH_AXES_XYZ) || defined(CONFIG_LIS2DH_AXES_RUNTIME)
 	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
-										 LIS2DH_ACCEL_Y_EN_BIT | \
-										 LIS2DH_ACCEL_Z_EN_BIT)
+					 LIS2DH_ACCEL_Y_EN_BIT | \
+					 LIS2DH_ACCEL_Z_EN_BIT)
 #endif
 
 #define LIS2DH_ACCEL_XYZ_MASK		BIT_MASK(3)
@@ -271,7 +271,6 @@ struct lis2dh_data {
 	union lis2dh_sample sample;
 	/* current scaling factor, in micro m/s^2 / lsb */
 	uint32_t scale;
-	bool powered_down;
 	uint8_t target_odr;
 #if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
 	bool target_X_axis;
@@ -288,6 +287,9 @@ struct lis2dh_data {
 	sensor_trigger_handler_t handler_anymotion;
 	atomic_t trig_flags;
 	enum sensor_channel chan_drdy;
+#if defined(CONFIG_PM_DEVICE)
+	uint32_t pm_state;
+#endif
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE);
