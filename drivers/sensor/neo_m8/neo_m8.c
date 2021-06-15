@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ublox_neo-m8
+#define DT_DRV_COMPAT ublox_neom8
 
 /** @file
  * @brief Atmel SAM MCU family Quadrature Decoder (QDEC/TC) driver.
@@ -50,7 +50,6 @@ static int ublox_m8_get(const struct device *dev, enum sensor_channel chan,
 static int ublox_m8_initialize(const struct device *dev)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	const struct qdec_sam_dev_cfg *const dev_cfg = dev->config;
 	
 printk("\n init m8!");
 	// /* Connect pins to the peripheral */
@@ -61,26 +60,23 @@ printk("\n init m8!");
 }
 
 static const struct sensor_driver_api ublox_m8_driver_api = {
+	// sensor_attr_set_t attr_set;
+	// sensor_attr_get_t attr_get;
+	// sensor_trigger_set_t trigger_set;
+	// sensor_sample_fetch_t sample_fetch;
+	// sensor_channel_get_t channel_get;
 	.sample_fetch = ublox_m8_fetch,
 	.channel_get = ublox_m8_get,
 };
 
+static const struct ublox_m8_dev_cfg m8inst_sam_config = {	
+	};								
+							
+	static struct ublox_m8_dev_data m8inst_sam_data;		
+		
 
 
-
-
-
-
-
-#define QDEC_SAM_INIT(inst)						\
-	static const struct ublox_m8_dev_cfg m8##inst##_sam_config = {	\
-	};								\
-									\
-	static struct ublox_m8_dev_data m8##inst##_sam_data;		\
-									\
-	DEVICE_DT_INST_DEFINE(n, ublox_m8_initialize, NULL,		\
-			    &m8##inst##_sam_data, &m8##inst##_sam_config, \
+DEVICE_DT_INST_DEFINE(0, ublox_m8_initialize, NULL,		\
+			    &m8inst_sam_data, &m8inst_sam_config, \
 			    POST_KERNEL, 80,	\
 			    &ublox_m8_driver_api);
-
-DT_INST_FOREACH_STATUS_OKAY(QDEC_SAM_INIT)

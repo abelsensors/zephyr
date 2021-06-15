@@ -3,7 +3,7 @@
 
 description: "ublox neo-m8 GNSS module"
     
-compatible: "ublox,neo-m8"
+compatible: "ublox,neom8"
 
 include: i2c-device.yaml
 

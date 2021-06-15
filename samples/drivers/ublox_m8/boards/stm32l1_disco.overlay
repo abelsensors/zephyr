@@ -5,7 +5,7 @@
  
 	neoGGPS: neo-m8@42 {
 		status = "okay";
-		compatible = "ublox,neo-m8";
+		compatible = "ublox,neom8";
 		label = "NEO_M8";
 		reg = <0x42>;
 	};
