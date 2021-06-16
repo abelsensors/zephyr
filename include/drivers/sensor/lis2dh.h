@@ -25,6 +25,14 @@ enum sensor_attribute_lis2dh {
 	SENSOR_ATTR_LIS2DH_ACT_DUR,
 };
 
+#ifdef CONFIG_LIS2DH_OPER_MODE_RUNTIME
+enum lis2dh_oper_mode {
+	OPER_MODE_LOW_POWER,
+	OPER_MODE_NORMAL,
+	OPER_MODE_HIGH_RES,
+};
+#endif
+
 /**
  * @brief reset the sensors registers.
  *
@@ -43,8 +51,18 @@ int lis2dh_reset(const struct device *dev);
  * @return 0 if successful, negative errno code if failure.
  */
 int lis2dh_axis_set(const struct device *dev, enum sensor_channel chan, bool enable);
-
 #endif /* CONFIG_LIS2DH_AXES_RUNTIME*/
+
+#ifdef CONFIG_LIS2DH_OPER_MODE_RUNTIME
+/**
+ * @brief Select operation mode
+ *
+ * @param dev Pointer to the sensor device.
+ * @param new_mode The new mode to be set
+ * @return 0 if successful, negative errno code if failure.
+ */
+int lis2dh_set_oper_mode(const struct device *dev, enum lis2dh_oper_mode new_mode);
+#endif
 
 #ifdef __cplusplus
 }

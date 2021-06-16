@@ -101,8 +101,7 @@ static int lis2dh_sample_fetch(const struct device *dev,
 	}
 
 	for (i = 0; i < (3 * sizeof(int16_t)); i += sizeof(int16_t)) {
-		int16_t *sample =
-			(int16_t *)&lis2dh->sample.raw[1 + i];
+		int16_t *sample = (int16_t *)&lis2dh->sample.raw[1 + i];
 
 		*sample = sys_le16_to_cpu(*sample);
 	}
@@ -114,7 +113,7 @@ static int lis2dh_sample_fetch(const struct device *dev,
 	return -ENODATA;
 }
 
-#ifdef CONFIG_LIS2DH_ODR_RUNTIME
+#if defined(CONFIG_LIS2DH_ODR_RUNTIME)
 /* 1620 & 5376 are low power only */
 static const uint16_t lis2dh_odr_map[] = {0, 1, 10, 25, 50, 100, 200, 400, 1620,
 				       1344, 5376};
@@ -123,9 +122,10 @@ static int lis2dh_freq_to_odr_val(uint16_t freq)
 {
 	size_t i;
 
-	/* An ODR of 0 Hz is not allowed */
+	/* An ODR of 0Hz is not allowed */
 	if (freq == 0U) {
-		LOG_ERR("An ODR of 0 Hz is not allowed, use lis2dh_power_down() instead");
+		LOG_ERR("An ODR of 0Hz is not allowed, use the PM subsystem\
+		 or lis2dh_suspend() instead");
 		return -EINVAL;
 	}
 
@@ -188,6 +188,104 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 }
 #endif
 
+#if (defined(CONFIG_LIS2DH_OPER_MODE_RUNTIME) || defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES))
+static int lis2dh_set_high_res(const struct device *dev, bool enable)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	int ret;
+	uint8_t value;
+
+	if (enable) {
+		/* re-enable High resolution mode */
+		ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
+		if (unlikely(ret < 0)) {
+			return ret;
+		}
+		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value | LIS2DH_HR_BIT);
+	} else { /* disable */
+		ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
+		if (unlikely(ret < 0)) {
+			return ret;
+		}
+		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value & ~LIS2DH_POWER_DOWN);
+	}
+}
+#endif /* CONFIG_LIS2DH_OPER_MODE_RUNTIME || CONFIG_LIS2DH_OPER_MODE_HIGH_RES */
+
+#if defined(CONFIG_LIS2DH_OPER_MODE_RUNTIME)
+int lis2dh_set_oper_mode(const struct device *dev, enum lis2dh_oper_mode new_mode)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	int ret;
+
+	if (new_mode == lis2dh->oper_mode){
+		return 0;
+	}
+
+	LOG_INF("New oper mode: %i", (uint8_t)new_mode);
+
+#if defined(CONFIG_PM_DEVICE)
+	if (lis2dh->pm_state == PM_DEVICE_STATE_LOW_POWER) {
+		lis2dh->oper_mode = new_mode;
+		LOG_INF("New operation mode will be applied once the sensor enters active mode.");
+		return 0;
+	}
+#endif
+
+	if (new_mode == OPER_MODE_LOW_POWER){
+		if (lis2dh->oper_mode == OPER_MODE_HIGH_RES) {
+			ret = lis2dh_set_high_res(dev, false);
+			if (unlikely(ret < 0)) {
+				return ret;
+			}
+		}
+		ret = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+									(uint8_t)LIS2DH_LP_EN_BIT_MASK,
+									(uint8_t)LIS2DH_LP_EN_BIT);
+		if (unlikely(ret < 0)){
+			return ret;
+		}
+		lis2dh->oper_mode = OPER_MODE_LOW_POWER;
+		return ret;
+
+	} else if (new_mode == OPER_MODE_NORMAL) {
+		if (lis2dh->oper_mode == OPER_MODE_HIGH_RES) {
+			ret = lis2dh_set_high_res(dev, false);
+			if (unlikely(ret < 0)) {
+				return ret;
+			}
+		}
+		ret = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+									(uint8_t)LIS2DH_LP_EN_BIT_MASK,
+								   ~(uint8_t)LIS2DH_LP_EN_BIT);
+		if (unlikely(ret < 0)){
+			return ret;
+		}
+		lis2dh->oper_mode = OPER_MODE_NORMAL;
+		return ret;
+
+	} else if (new_mode == OPER_MODE_HIGH_RES) {
+		if (lis2dh->oper_mode == OPER_MODE_LOW_POWER){
+			ret = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL1,
+										(uint8_t)LIS2DH_LP_EN_BIT_MASK,
+									   ~(uint8_t)LIS2DH_LP_EN_BIT);
+			if (unlikely(ret < 0)){
+				return ret;
+			}
+		}
+		ret = lis2dh_set_high_res(dev, true);
+		if (unlikely(ret < 0)){
+			return ret;
+		}
+		lis2dh->oper_mode = OPER_MODE_HIGH_RES;
+		return ret;
+
+	} else {
+		return -EINVAL;
+	}
+}
+#endif
+
 #if defined(CONFIG_PM_DEVICE)
 static int lis2dh_suspend(const struct device *dev)
 {
@@ -220,11 +318,9 @@ static int lis2dh_resume_from_suspend(const struct device *dev)
 	struct lis2dh_data *lis2dh = dev->data;
 
 	if (lis2dh->pm_state == PM_DEVICE_STATE_LOW_POWER) {
-		int ret;
-#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-		uint8_t value;
-#endif
+		
 		uint8_t axes = 0;
+		uint8_t oper_mode = 0;
 #if defined(CONFIG_LIS2DH_AXES_RUNTIME)
 		if (lis2dh->target_X_axis) {
 			axes |= (uint8_t)LIS2DH_ACCEL_X_EN_BIT;
@@ -237,32 +333,34 @@ static int lis2dh_resume_from_suspend(const struct device *dev)
 		}
 #else
 		axes = (uint8_t)LIS2DH_ACCEL_EN_BITS;
-#endif /* CONFIG_LIS2DH_AXES_RUNTIME */
+#endif /* CONFIG_LIS2DH_AXES_RUNTIME */	
+
+#if defined(CONFIG_LIS2D_OPER_MODE_RUNTIME)
+		if (lis2dh->oper_mode == OPER_MODE_LOW_POWER) {
+			oper_mode |= LIS2DH_LP_EN_BIT;
+		} else if (lis2dh->oper_mode == OPER_MODE_HIGH_RES) {
+			int ret = lis2dh_set_high_res(dev, true);
+			if (unlikely(ret < 0)){
+				return ret;
+			}
+		} 
+#elif defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
+		/* re-enable High resolution mode */
+		int ret = lis2dh_set_high_res(dev, true);
+		if (unlikely(ret < 0)){
+			return ret;
+		}
+#elif defined(CONFIG_LIS2DH_OPER_MODE_LOW_POWER)
+		oper_mode |= LIS2DH_LP_EN_BIT;
+#endif /* CONFIG_LIS2DH_OPER_MODE */
 
 #if defined(CONFIG_LIS2DH_ODR_RUNTIME)
 		uint8_t odr = (uint8_t)LIS2DH_ODR_RATE(lis2dh->target_odr);
 #else
 		uint8_t odr = (uint8_t)LIS2DH_ODR_BITS;
 #endif /* CONFIG_LIS2DH_ODR_RUNTIME */
-		ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, axes |\
-											 LIS2DH_LP_EN_BIT | odr);									
-		if (unlikely(ret < 0)) {
-			return ret;
-		}
-
-#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-		/* re-enable High resolution mode */
-		ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
-		if (unlikely(ret < 0)) {
-			return ret;
-		}
-
-		ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value | LIS2DH_HR_BIT);
-		if (unlikely(ret < 0)) {
-			return ret;
-		}
-#endif
-		return ret;
+		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,\
+							axes | oper_mode | odr);									
 	} else {
 		LOG_INF("sensor is not powered down");
 		return 0;
@@ -274,9 +372,9 @@ static int lis2dh_get_power_state(const struct device *dev)
 	struct lis2dh_data *lis2dh = dev->data;
 	return lis2dh->pm_state;
 }
-#endif
+#endif /* CONFIG_PM_DEVICE */
 
-#ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
+#if defined(CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME)
 
 #define LIS2DH_RANGE_IDX_TO_VALUE(idx)		(1 << ((idx) + 1))
 #define LIS2DH_NUM_RANGES			4
@@ -370,11 +468,11 @@ static int lis2dh_acc_config(const struct device *dev,
 			     const struct sensor_value *val)
 {
 	switch ((uint16_t)attr) {
-#ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
+#if defined(CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
 		return lis2dh_acc_range_set(dev, sensor_ms2_to_g(val));
 #endif
-#ifdef CONFIG_LIS2DH_ODR_RUNTIME
+#if defined(CONFIG_LIS2DH_ODR_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return lis2dh_acc_odr_set(dev, val->val1);
 #endif
@@ -607,17 +705,20 @@ int lis2dh_reg_init(const struct device *dev)
 		LOG_ERR("Failed to reset ACT registers.");
 		return ret;
 	}
-
+	uint8_t high_res = 0;
+#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
+	high_res |= LIS2DH_HR_BIT;
+#endif
 	/* set full scale range and store it for later conversion */
 	lis2dh->scale = lis2dh_reg_val_to_scale[LIS2DH_FS_IDX];
 	ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4,
-					LIS2DH_FS_BITS | LIS2DH_HR_BIT);
+					LIS2DH_FS_BITS | high_res);
 	if (unlikely(ret < 0)) {
 		LOG_ERR("Failed to set full scale ctrl register.");
 		return ret;
 	}
 
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if defined(CONFIG_LIS2DH_TRIGGER)
 	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {
 		ret = lis2dh_init_interrupt(dev);
 		if (unlikely(ret < 0)) {
@@ -630,12 +731,23 @@ int lis2dh_reg_init(const struct device *dev)
 	LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
 		    cfg->bus_name, 1 << (LIS2DH_FS_IDX + 1),
 		    LIS2DH_ODR_IDX, (uint8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
+#if defined(CONFIG_PM_DEVICE)
 	/* set pm_state as active */
 	lis2dh->pm_state = PM_DEVICE_STATE_ACTIVE;
+#endif
+#if defined(CONFIG_LIS2DH_OPER_MODE_RUNTIME)
+	/* set target oper mode to normal */
+	lis2dh->oper_mode = OPER_MODE_NORMAL;
+#endif
+#if defined(CONFIG_LIS2DH_AXES_RUNTIME)
+	/* set all axes as enabled */
+	lis2dh->target_X_axis = true;
+	lis2dh->target_Y_axis = true;
+	lis2dh->target_Z_axis = true;
+#endif
 	/* enable accel measurements and set power mode and data rate */
 	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
-					LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT |
-					LIS2DH_ODR_BITS);
+					LIS2DH_ACCEL_EN_BITS | LIS2DH_ODR_BITS);
 }
 
 int lis2dh_init(const struct device *dev)
@@ -708,7 +820,7 @@ int lis2dh_reset(const struct device *dev)
 	return lis2dh_reg_init(dev);
 }
 
-#ifdef CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE)
 static int lis2dh_pm_control(const struct device *dev, uint32_t ctrl_command,
 			      uint32_t *state, pm_device_cb cb, void *arg)
 {
@@ -813,7 +925,7 @@ static int lis2dh_pm_control(const struct device *dev, uint32_t ctrl_command,
 		.cs_gpios_label = LIS2DH_SPI_CS_LABEL(inst),		\
 	})
 
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if defined(CONFIG_LIS2DH_TRIGGER)
 #define GPIO_DT_SPEC_INST_GET_BY_IDX_COND(id, prop, idx)		\
 	COND_CODE_1(DT_INST_PROP_HAS_IDX(id, prop, idx),		\
 		    (GPIO_DT_SPEC_INST_GET_BY_IDX(id, prop, idx)),	\

@@ -34,10 +34,10 @@ static void fetch_and_display(const struct device *sensor)
 		printf("ERROR: Update failed: %d\n", rc);
 	} else {
 		printf("#%u @ %u ms: %sx %f , y %f , z %f\n",
-		       count, k_uptime_get_32(), overrun,
-		       sensor_value_to_double(&accel[0]),
-		       sensor_value_to_double(&accel[1]),
-		       sensor_value_to_double(&accel[2]));
+		    	count, k_uptime_get_32(), overrun,
+		    	sensor_value_to_double(&accel[0]),
+		    	sensor_value_to_double(&accel[1]),
+		    	sensor_value_to_double(&accel[2]));
 	}
 }
 
@@ -141,51 +141,56 @@ void main(void)
 		return;
 	}
 
-	act_TH_set(sensor, 8, 0);
-	act_DUR_set(sensor, 1);
-	ODR_set(sensor, (uint16_t)50);
+	//act_TH_set(sensor, 8, 0);
+	//act_DUR_set(sensor, 1);
+	ODR_set(sensor, (uint16_t)10);
 
 #if CONFIG_LIS2DH_TRIGGER
-	{
-		struct sensor_trigger trig;
-		int rc;
+	struct sensor_trigger trig;
+	int rc;
 
-		trig.type = SENSOR_TRIG_DATA_READY;
-		trig.chan = SENSOR_CHAN_ACCEL_XYZ;
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
-		rc = sensor_trigger_set(sensor, &trig, trigger_handler);
-		if (rc != 0) {
-			printf("Failed to set trigger: %d\n", rc);
-			return;
-		}
+	rc = sensor_trigger_set(sensor, &trig, trigger_handler);
+	if (rc != 0) {
+		printf("Failed to set trigger: %d\n", rc);
+		return;
+	}
 
-		slope_TH_set(sensor, 8, 0);
-		slope_DUR_set(sensor, 1);
-		printf("Waiting for triggers\n");
-		k_sleep(K_MSEC(3000));
-		while (true) {
-			/* power down the sensor */
-			pm_device_state_set(sensor, PM_DEVICE_STATE_LOW_POWER, NULL, NULL);
-			k_sleep(K_MSEC(2000));
-			
-			
-			/* re-enable the sensor */
-			pm_device_state_set(sensor, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
-			
+	//slope_TH_set(sensor, 8, 0);
+	//slope_DUR_set(sensor, 1);
+	printf("Waiting for triggers\n");
+	k_sleep(K_MSEC(3000));
+	while (true) {
+		/* power down the sensor */
+		pm_device_state_set(sensor, PM_DEVICE_STATE_LOW_POWER, NULL, NULL);
+		k_sleep(K_MSEC(1000));
+		
+		/* re-enable the sensor */
+		pm_device_state_set(sensor, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
+
 #if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
-			k_sleep(K_MSEC(500));
-			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, false);
-			k_sleep(K_MSEC(500));
-			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, true);
-			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Y, false);
-			k_sleep(K_MSEC(500));
-			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Y, true);
-			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Z, false);
-			k_sleep(K_MSEC(500));
-			lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Z, true);
+		k_sleep(K_MSEC(500));
+		lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, false);
+		k_sleep(K_MSEC(500));
+		lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_X, true);
+		lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Y, false);
+		k_sleep(K_MSEC(500));
+		lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Y, true);
+		lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Z, false);
+		k_sleep(K_MSEC(500));
+		lis2dh_axis_set(sensor, SENSOR_CHAN_ACCEL_Z, true);
 #endif
-			k_sleep(K_MSEC(2000));
-		}
+#if defined(CONFIG_LIS2DH_OPER_MODE_RUNTIME)
+		k_sleep(K_MSEC(500));
+		lis2dh_set_oper_mode(sensor, OPER_MODE_LOW_POWER);
+		k_sleep(K_MSEC(500));
+		lis2dh_set_oper_mode(sensor, OPER_MODE_HIGH_RES);
+		k_sleep(K_MSEC(500));
+		lis2dh_set_oper_mode(sensor, OPER_MODE_NORMAL);
+#endif
+		k_sleep(K_MSEC(1000));
 	}
 #else /* CONFIG_LIS2DH_TRIGGER */
 	printf("Polling at 10 Hz\n");

@@ -67,11 +67,7 @@
 #define LIS2DH_ACCEL_XYZ_MASK		BIT_MASK(3)
 
 #define LIS2DH_LP_EN_BIT_MASK		BIT(3)
-#if defined(CONFIG_LIS2DH_OPER_MODE_LOW_POWER)
-	#define LIS2DH_LP_EN_BIT	BIT(3)
-#else
-	#define LIS2DH_LP_EN_BIT	0
-#endif
+#define LIS2DH_LP_EN_BIT			BIT(3)
 
 #define LIS2DH_POWER_DOWN		BIT(3)
 
@@ -138,11 +134,9 @@
 
 #define LIS2DH_FS_SELECT(fs)		((fs) << LIS2DH_FS_SHIFT)
 #define LIS2DH_FS_BITS			(LIS2DH_FS_SELECT(LIS2DH_FS_IDX))
-#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-	#define LIS2DH_HR_BIT		BIT(3)
-#else
-	#define LIS2DH_HR_BIT		0
-#endif
+
+#define LIS2DH_HR_BIT		BIT(3)
+
 
 #define LIS2DH_REG_CTRL5		0x24
 #define LIS2DH_LIR_INT2_SHIFT		1
@@ -243,7 +237,7 @@ struct lis2dh_config {
 	const char *bus_name;
 	int (*bus_init)(const struct device *dev);
 	const union lis2dh_bus_cfg bus_cfg;
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if defined(CONFIG_LIS2DH_TRIGGER)
 	const struct gpio_dt_spec gpio_drdy;
 	const struct gpio_dt_spec gpio_int;
 #endif /* CONFIG_LIS2DH_TRIGGER */
@@ -278,7 +272,7 @@ struct lis2dh_data {
 	bool target_Z_axis;
 #endif
 
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if defined(CONFIG_LIS2DH_TRIGGER)
 	const struct device *dev;
 	struct gpio_callback gpio_int1_cb;
 	struct gpio_callback gpio_int2_cb;
@@ -289,6 +283,9 @@ struct lis2dh_data {
 	enum sensor_channel chan_drdy;
 #if defined(CONFIG_PM_DEVICE)
 	uint32_t pm_state;
+#endif
+#if defined(CONFIG_LIS2DH_OPER_MODE_RUNTIME)
+	enum lis2dh_oper_mode oper_mode;
 #endif
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
@@ -311,7 +308,7 @@ int lis2dh_spi_access(struct lis2dh_data *ctx, uint8_t cmd,
 		      void *data, size_t length);
 #endif
 
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if defined(CONFIG_LIS2DH_TRIGGER)
 int lis2dh_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);

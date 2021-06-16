@@ -79,6 +79,9 @@ choice
 	  Choose between high resolution, normal or low power operation
 	  mode for chip at init.
 
+config LIS2DH_OPER_MODE_RUNTIME
+	bool "Set at runtime, initialises to normal (10 bit)"
+
 config LIS2DH_OPER_MODE_HIGH_RES
 	bool "high resolution (12 bit)"
 
