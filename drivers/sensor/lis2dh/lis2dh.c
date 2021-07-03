@@ -292,18 +292,7 @@ static int lis2dh_suspend(const struct device *dev)
 	struct lis2dh_data *lis2dh = dev->data;
 	if (lis2dh->pm_state == PM_DEVICE_STATE_ACTIVE) {
 #if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-		int ret;
-		uint8_t value;
-		/* check if high resolution mode is enabled as it is not allowed to
-			enable low power mode when high resolution mode is enabled */
-		ret = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL4, &value);
-		if (unlikely(ret < 0)) {
-			return ret;
-		}
-		ret = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL4, value & ~LIS2DH_POWER_DOWN);
-		if (unlikely(ret < 0)) {
-			return ret;
-		}
+		lis2dh_set_high_res(dev, false);
 #endif
 		/* set ODR to 0, Enable Low Power and disable all axis */
 		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, LIS2DH_POWER_DOWN);
