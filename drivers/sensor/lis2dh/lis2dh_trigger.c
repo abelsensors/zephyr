@@ -224,7 +224,7 @@ int lis2dh_acc_slope_config(const struct device *dev,
 		LOG_INF("int2_ths=0x%x range_g=%d ums2=%u", reg_val,
 			    range_g, slope_th_ums2 - 1);
 
-		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_INT2_THS,
+		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_INT2_THS,
 						  reg_val);
 	} else { /* SENSOR_ATTR_SLOPE_DUR */
 		/*
@@ -237,11 +237,9 @@ int lis2dh_acc_slope_config(const struct device *dev,
 
 		LOG_INF("int2_dur=0x%x", val->val1);
 
-		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_INT2_DUR,
+		return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_INT2_DUR,
 						  val->val1);
 	}
-
-	return status;
 }
 
 static void lis2dh_gpio_int1_callback(const struct device *dev,

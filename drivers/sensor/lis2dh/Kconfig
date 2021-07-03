@@ -79,6 +79,9 @@ choice
 	  Choose between high resolution, normal or low power operation
 	  mode for chip at init.
 
+config LIS2DH_OPER_MODE_RUNTIME
+	bool "Set at runtime, initialises to normal (10 bit)"
+
 config LIS2DH_OPER_MODE_HIGH_RES
 	bool "high resolution (12 bit)"
 
@@ -101,7 +104,7 @@ choice
 	  1344Hz in normal power mode
 
 config LIS2DH_ODR_RUNTIME
-	bool "Set at runtime"
+	bool "Set at runtime, initialises to 50Hz."
 
 config LIS2DH_ODR_1
 	bool "1Hz"
@@ -135,6 +138,38 @@ config LIS2DH_ODR_9_NORMAL
 config LIS2DH_ODR_9_LOW
 	bool "5KHz"
 	depends on LIS2DH_OPER_MODE_LOW_POWER
+
+endchoice
+
+choice
+	prompt "Enabled axes"
+	default LIS2DH_AXES_XYZ
+	help
+	  Axes which will be measured
+
+config LIS2DH_AXES_RUNTIME
+	bool "set at runtime, initialises to all axes"
+
+config LIS2DH_AXES_X
+	bool "Only the X axis"
+
+config LIS2DH_AXES_Y
+	bool "Only the Y axis"
+
+config LIS2DH_AXES_Z
+	bool "Only the Z axis"
+
+config LIS2DH_AXES_XY
+	bool "Only the X and Y axes"
+
+config LIS2DH_AXES_XZ
+	bool "Only the X and Z axes"
+
+config LIS2DH_AXES_YZ
+	bool "Only the Y and Z axes"
+
+config LIS2DH_AXES_XYZ
+	bool "All axes"
 
 endchoice
 

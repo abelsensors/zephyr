@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>
+#include <drivers/sensor/lis2dh.h>
 #include <string.h>
 
 #define LIS2DH_REG_WAI			0x0f
@@ -37,17 +38,38 @@
 #define LIS2DH_ACCEL_X_EN_BIT		BIT(0)
 #define LIS2DH_ACCEL_Y_EN_BIT		BIT(1)
 #define LIS2DH_ACCEL_Z_EN_BIT		BIT(2)
-#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
-					LIS2DH_ACCEL_Y_EN_BIT | \
-					LIS2DH_ACCEL_Z_EN_BIT)
+#if defined(CONFIG_LIS2DH_AXES_RUNTIME)
+	#define LIS2DH_ACCEL_XYZ_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
+					 LIS2DH_ACCEL_Y_EN_BIT | \
+					 LIS2DH_ACCEL_Z_EN_BIT)
+#endif
+#if defined(CONFIG_LIS2DH_AXES_X)
+	#define LIS2DH_ACCEL_EN_BITS		 LIS2DH_ACCEL_X_EN_BIT
+#elif defined(CONFIG_LIS2DH_AXES_Y)
+	#define LIS2DH_ACCEL_EN_BITS		 LIS2DH_ACCEL_Y_EN_BIT
+#elif defined(CONFIG_LIS2DH_AXES_Z)
+	#define LIS2DH_ACCEL_EN_BITS		 LIS2DH_ACCEL_Z_EN_BIT
+#elif defined(CONFIG_LIS2DH_AXES_XY)
+	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
+					 LIS2DH_ACCEL_Y_EN_BIT)
+#elif defined(CONFIG_LIS2DH_AXES_XZ)
+	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
+					 LIS2DH_ACCEL_Z_EN_BIT)
+#elif defined(CONFIG_LIS2DH_AXES_YZ)
+	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_Y_EN_BIT | \
+					 LIS2DH_ACCEL_Z_EN_BIT)
+#elif defined(CONFIG_LIS2DH_AXES_XYZ) || defined(CONFIG_LIS2DH_AXES_RUNTIME)
+	#define LIS2DH_ACCEL_EN_BITS		(LIS2DH_ACCEL_X_EN_BIT | \
+					 LIS2DH_ACCEL_Y_EN_BIT | \
+					 LIS2DH_ACCEL_Z_EN_BIT)
+#endif
+
 #define LIS2DH_ACCEL_XYZ_MASK		BIT_MASK(3)
 
 #define LIS2DH_LP_EN_BIT_MASK		BIT(3)
-#if defined(CONFIG_LIS2DH_OPER_MODE_LOW_POWER)
-	#define LIS2DH_LP_EN_BIT	BIT(3)
-#else
-	#define LIS2DH_LP_EN_BIT	0
-#endif
+#define LIS2DH_LP_EN_BIT			BIT(3)
+
+#define LIS2DH_POWER_DOWN		BIT(3)
 
 #define LIS2DH_ODR_1			1
 #define LIS2DH_ODR_2			2
@@ -85,8 +107,11 @@
 #define LIS2DH_ODR_MASK			(BIT_MASK(4) << LIS2DH_ODR_SHIFT)
 
 #define LIS2DH_REG_CTRL2		0x21
+#define LIS2DH_HPIS1_EN_BIT		BIT(0)
 #define LIS2DH_HPIS2_EN_BIT		BIT(1)
 #define LIS2DH_FDS_EN_BIT		BIT(3)
+#define LIs2DH_HPCF1			BIT(4)
+#define LIs2DH_HPCF2			BIT(5)	
 
 #define LIS2DH_REG_CTRL3		0x22
 #define LIS2DH_EN_DRDY1_INT1_SHIFT	4
@@ -109,15 +134,14 @@
 
 #define LIS2DH_FS_SELECT(fs)		((fs) << LIS2DH_FS_SHIFT)
 #define LIS2DH_FS_BITS			(LIS2DH_FS_SELECT(LIS2DH_FS_IDX))
-#if defined(CONFIG_LIS2DH_OPER_MODE_HIGH_RES)
-	#define LIS2DH_HR_BIT		BIT(3)
-#else
-	#define LIS2DH_HR_BIT		0
-#endif
+
+#define LIS2DH_HR_BIT		BIT(3)
+
 
 #define LIS2DH_REG_CTRL5		0x24
 #define LIS2DH_LIR_INT2_SHIFT		1
 #define LIS2DH_EN_LIR_INT2		BIT(LIS2DH_LIR_INT2_SHIFT)
+#define LIS2DH_REBOOT_BIT		BIT(7)
 
 #define LIS2DH_REG_CTRL6		0x25
 #define LIS2DH_EN_INT2_INT2_SHIFT	5
@@ -154,11 +178,32 @@
 #define LIS2DH_INT_CFG_XHIE_XUPE	BIT(1)
 #define LIS2DH_INT_CFG_XLIE_XDOWNE	BIT(0)
 
+#define LIS2DH_REG_INT1_SRC		0x31
 #define LIS2DH_REG_INT2_SRC		0x35
 
+#define LIS2DH_REG_INT1_THS		0x32
 #define LIS2DH_REG_INT2_THS		0x36
 
+#define LIS2DH_REG_INT1_DUR		0x33
 #define LIS2DH_REG_INT2_DUR		0x37
+
+#define LIS2DH_REG_ACT_THS		0x3E
+#define LIS2DH_REG_ACT_DUR		0x3F
+
+#define LIS2DH_WAKE_THS_ABS_MAX	127
+
+#if defined CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	86
+#elif ((defined CONFIG_LIS2DH_ACCEL_RANGE_2G) ||\
+defined(CONFIG_LIS2DH_ACCEL_RANGE_4G))
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	125
+#elif defined(CONFIG_LIS2DH_ACCEL_RANGE_8G)
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	127
+#elif defined(CONFIG_LIS2DH_ACCEL_RANGE_16G)
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	86
+#else
+	#define LIS2DH_WAKE_THS_RECOMM_MAX	86
+#endif	
 
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7
@@ -192,7 +237,7 @@ struct lis2dh_config {
 	const char *bus_name;
 	int (*bus_init)(const struct device *dev);
 	const union lis2dh_bus_cfg bus_cfg;
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if defined(CONFIG_LIS2DH_TRIGGER)
 	const struct gpio_dt_spec gpio_drdy;
 	const struct gpio_dt_spec gpio_int;
 #endif /* CONFIG_LIS2DH_TRIGGER */
@@ -220,8 +265,14 @@ struct lis2dh_data {
 	union lis2dh_sample sample;
 	/* current scaling factor, in micro m/s^2 / lsb */
 	uint32_t scale;
+	uint8_t target_odr;
+#if	defined(CONFIG_LIS2DH_AXES_RUNTIME)
+	bool target_X_axis;
+	bool target_Y_axis;
+	bool target_Z_axis;
+#endif
 
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if defined(CONFIG_LIS2DH_TRIGGER)
 	const struct device *dev;
 	struct gpio_callback gpio_int1_cb;
 	struct gpio_callback gpio_int2_cb;
@@ -230,6 +281,12 @@ struct lis2dh_data {
 	sensor_trigger_handler_t handler_anymotion;
 	atomic_t trig_flags;
 	enum sensor_channel chan_drdy;
+#if defined(CONFIG_PM_DEVICE)
+	uint32_t pm_state;
+#endif
+#if defined(CONFIG_LIS2DH_OPER_MODE_RUNTIME)
+	enum lis2dh_oper_mode oper_mode;
+#endif
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE);
@@ -251,7 +308,7 @@ int lis2dh_spi_access(struct lis2dh_data *ctx, uint8_t cmd,
 		      void *data, size_t length);
 #endif
 
-#ifdef CONFIG_LIS2DH_TRIGGER
+#if defined(CONFIG_LIS2DH_TRIGGER)
 int lis2dh_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
