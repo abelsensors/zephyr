@@ -38,6 +38,8 @@ config SENSOR_SHELL_BATTERY
 
 comment "Device Drivers"
 
+source "drivers/sensor/cmps03/Kconfig"
+
 source "drivers/sensor/adt7420/Kconfig"
 
 source "drivers/sensor/adxl345/Kconfig"

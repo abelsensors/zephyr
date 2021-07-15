@@ -1,0 +1,11 @@
+# BMP280 temperature and pressure sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2017 IpTronix S.r.l.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CMPS03
+	bool "CMPS03 sensor"
+	depends on I2C
+	help
+	  Enable driver for CMPS03 I2C-based Compass Sensor.

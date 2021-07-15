@@ -1,0 +1,22 @@
+description: |
+  Devantech CMPS03 Compass Sensor.  See more info at:
+  -
+
+compatible: "devantech,cmps03"
+
+include: i2c-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      Identifies pin for the INT1 signal on the sensor.
+
+  is-bmc150:
+    type: boolean
+    required: false
+    description: |
+      Specifies that the driver should adapt to the accelerometer
+      capability provided by the BMC150 6-axis eCompass.  This affects
+      the chip ID and the resolution of the measurements.
